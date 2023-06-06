@@ -507,7 +507,7 @@ auto XournalppCursor::createHighlighterOrPenCursor(int size, double alpha) -> Gd
         drgbCopy.alpha = alpha;
         gdk_cairo_set_source_rgba(cr, &drgbCopy);
         double cursorSize = control->getToolHandler()->getThickness() * control->getZoomControl()->getZoom();
-        cairo_arc(cr, centerX, centerY, cursorSize, 0, 2. * M_PI);
+        cairo_arc(cr, centerX, centerY, cursorSize+5, 0, 2. * M_PI);
         cairo_fill(cr);
     }
 
