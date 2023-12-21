@@ -2060,9 +2060,11 @@ void Control::clipboardPasteImage(GdkPixbuf* img) {
     pageWidth = pageWidth * 0.5;
     pageHeight = pageHeight * 0.5;
 
-    auto scaledWidth = width;
-    auto scaledHeight = height;
-
+    // auto scaledWidth = width;
+    // auto scaledHeight = height;
+    auto scaledWidth = static_cast<double>(gdk_pixbuf_get_width(img)) ;
+    auto scaledHeight = static_cast<double>(gdk_pixbuf_get_height(img));
+    
     if (width > pageWidth) {
         scaledWidth = pageWidth;
         scaledHeight = (scaledWidth * height) / width;
