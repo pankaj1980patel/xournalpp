@@ -78,7 +78,7 @@ void SaveHandler::prepareSave(Document* doc) {
 void SaveHandler::writeHeader() {
     this->root->setAttrib("creator", PROJECT_STRING);
     this->root->setAttrib("fileversion", FILE_FORMAT_VERSION);
-    this->root->addChild(new XmlTextNode("title", std::string{"Xournal++ document - see "} + PROJECT_URL));
+    this->root->addChild(new XmlTextNode("title", std::string{"Xournal++ document - see "} + PROJECT_HOMEPAGE_URL));
 }
 
 auto SaveHandler::getColorStr(Color c, unsigned char alpha) -> std::string {
@@ -89,9 +89,11 @@ auto SaveHandler::getColorStr(Color c, unsigned char alpha) -> std::string {
 }
 
 void SaveHandler::writeTimestamp(AudioElement* audioElement, XmlAudioNode* xmlAudioNode) {
-    /** set stroke timestamp value to the XmlPointNode */
-    xmlAudioNode->setAttrib("ts", audioElement->getTimestamp());
-    xmlAudioNode->setAttrib("fn", audioElement->getAudioFilename().u8string());
+    if (!audioElement->getAudioFilename().empty()) {
+        /** set stroke timestamp value to the XmlPointNode */
+        xmlAudioNode->setAttrib("ts", audioElement->getTimestamp());
+        xmlAudioNode->setAttrib("fn", audioElement->getAudioFilename().u8string());
+    }
 }
 
 void SaveHandler::visitStroke(XmlPointNode* stroke, Stroke* s) {
@@ -163,14 +165,14 @@ void SaveHandler::visitLayer(XmlNode* page, Layer* l) {
         layer->setAttrib("name", l->getName().c_str());
     }
 
-    for (Element* e: l->getElements()) {
+    for (auto&& e: l->getElements()) {
         if (e->getType() == ELEMENT_STROKE) {
-            auto* s = dynamic_cast<Stroke*>(e);
+            auto* s = dynamic_cast<Stroke*>(e.get());
             auto* stroke = new XmlPointNode("stroke");
             layer->addChild(stroke);
             visitStroke(stroke, s);
         } else if (e->getType() == ELEMENT_TEXT) {
-            Text* t = dynamic_cast<Text*>(e);
+            Text* t = dynamic_cast<Text*>(e.get());
             auto* text = new XmlTextNode("text", t->getText());
             layer->addChild(text);
 
@@ -184,7 +186,7 @@ void SaveHandler::visitLayer(XmlNode* page, Layer* l) {
 
             writeTimestamp(t, text);
         } else if (e->getType() == ELEMENT_IMAGE) {
-            auto* i = dynamic_cast<Image*>(e);
+            auto* i = dynamic_cast<Image*>(e.get());
             auto* image = new XmlImageNode("image");
             layer->addChild(image);
 
@@ -195,7 +197,7 @@ void SaveHandler::visitLayer(XmlNode* page, Layer* l) {
             image->setAttrib("right", i->getX() + i->getElementWidth());
             image->setAttrib("bottom", i->getY() + i->getElementHeight());
         } else if (e->getType() == ELEMENT_TEXIMAGE) {
-            auto* i = dynamic_cast<TexImage*>(e);
+            auto* i = dynamic_cast<TexImage*>(e.get());
             auto* image = new XmlTexNode("teximage", std::string(i->getBinaryData()));
             layer->addChild(image);
 

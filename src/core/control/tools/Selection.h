@@ -41,15 +41,15 @@ public:
     virtual bool userTapped(double zoom) const = 0;
     virtual const std::vector<BoundaryPoint>& getBoundary() const = 0;
 
-    inline const std::shared_ptr<xoj::util::DispatchPool<xoj::view::SelectionView>>& getViewPool() const {
+    inline auto getViewPool() const -> const std::shared_ptr<xoj::util::DispatchPool<xoj::view::SelectionView>>& {
         return viewPool;
     }
 
-    bool isMultiLayerSelection();
+    auto isMultiLayerSelection() -> bool;
     /**
      * Get the selected elements and clears them (std::move)
      */
-    InsertionOrder releaseElements();
+    auto releaseElements() -> InsertionOrderRef;
 
 private:
 protected:
@@ -57,7 +57,7 @@ protected:
 
     bool multiLayer;
 
-    InsertionOrder selectedElements;
+    InsertionOrderRef selectedElements;
     PageRef page;
 
     Range bbox;

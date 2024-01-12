@@ -75,11 +75,13 @@ MainWindow::MainWindow(GladeSearchpath* gladeSearchPath, Control* control, GtkAp
     // Window handler
     g_signal_connect(this->window, "delete-event", xoj::util::wrap_for_g_callback_v<deleteEventCallback>,
                      this->control);
-    g_signal_connect(this->window, "window_state_event", xoj::util::wrap_for_g_callback_v<windowStateEventCallback>,
+#if GTK_MAJOR_VERSION == 3
+    g_signal_connect(this->window, "notify::is-maximized", xoj::util::wrap_for_g_callback_v<windowMaximizedCallback>,
                      this);
-
-    g_signal_connect(get("buttonCloseSidebar"), "clicked", xoj::util::wrap_for_g_callback_v<buttonCloseSidebarClicked>,
+#else
+    g_signal_connect(this->window, "notify::maximized", xoj::util::wrap_for_g_callback_v<windowMaximizedCallback>,
                      this);
+#endif
 
     // "watch over" all key events
     g_signal_connect(this->window, "key-press-event", G_CALLBACK(gtk_window_propagate_key_event), nullptr);
@@ -339,17 +341,6 @@ void MainWindow::updateScrollbarSidebarPosition() {
     g_object_unref(boxContents);
 }
 
-void MainWindow::buttonCloseSidebarClicked(GtkButton* button, MainWindow* win) {
-    Settings* settings = win->control->getSettings();
-    if (settings->getActiveViewMode() == PresetViewModeIds::VIEW_MODE_DEFAULT) {
-        settings->setSidebarVisible(false);
-        ViewMode viewMode = settings->getViewModes()[PresetViewModeIds::VIEW_MODE_DEFAULT];
-        viewMode.showSidebar = false;
-        settings->setViewMode(PresetViewModeIds::VIEW_MODE_DEFAULT, viewMode);
-    }
-    win->setSidebarVisible(false);
-}
-
 auto MainWindow::deleteEventCallback(GtkWidget* widget, GdkEvent* event, Control* control) -> bool {
     control->quit();
 
@@ -421,10 +412,8 @@ auto MainWindow::setFullscreen(bool enabled) const -> void {
 
 auto MainWindow::getXournal() const -> XournalView* { return xournal.get(); }
 
-auto MainWindow::windowStateEventCallback(GtkWidget* window, GdkEventWindowState* event, MainWindow* win) -> bool {
+auto MainWindow::windowMaximizedCallback(GObject* window, GParamSpec*, MainWindow* win) -> void {
     win->setMaximized(gtk_window_is_maximized(GTK_WINDOW(window)));
-
-    return false;
 }
 
 void MainWindow::toolbarSelected(const std::string& id) {

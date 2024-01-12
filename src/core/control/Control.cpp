@@ -168,7 +168,7 @@ Control::~Control() {
     g_source_remove(this->changeTimout);
     this->enableAutosave(false);
 
-    deleteLastAutosaveFile("");
+    deleteLastAutosaveFile();
     this->scheduler->stop();
     this->changedPages.clear();  // can be removed, will be done by implicit destructor
 
@@ -208,55 +208,29 @@ Control::~Control() {
     this->layerController = nullptr;
 }
 
-
-void Control::renameLastAutosaveFile() {
-    if (this->lastAutosaveFilename.empty()) {
-        return;
-    }
-
-    auto const& filename = this->lastAutosaveFilename;
-    auto renamed = Util::getAutosaveFilepath();
-    Util::clearExtensions(renamed);
-    if (!filename.empty() && filename.string().front() != '.') {
-        // This file must be a fresh, unsaved document. Since this file is
-        // already in the autosave directory, we need to change the renamed filename.
-        renamed += ".old.autosave.xopp";
-    } else {
-        // The file is a saved document with the form ".<filename>.autosave.xopp"
-        renamed += filename.filename();
-    }
-
-    g_message("%s", FS(_F("Autosave renamed from {1} to {2}") % this->lastAutosaveFilename.string() % renamed.string())
-                            .c_str());
-
-    if (!fs::exists(filename)) {
-        this->save(false);
-    }
-
-    std::vector<string> errors;
+void Control::setLastAutosaveFile(fs::path newAutosaveFile) {
     try {
-        Util::safeRenameFile(filename, renamed);
+        if (!fs::equivalent(newAutosaveFile, this->lastAutosaveFilename) && fs::exists(newAutosaveFile)) {
+            deleteLastAutosaveFile();
+        }
     } catch (const fs::filesystem_error& e) {
-        auto fmtstr = _F("Could not rename autosave file from \"{1}\" to \"{2}\": {3}");
-        errors.emplace_back(FS(fmtstr % filename.u8string() % renamed.u8string() % e.what()));
+        auto fmtstr = FS(_F("Filesystem error: {2}") % e.what());
+        Util::execInUiThread([fmtstr, win = getGtkWindow()]() { XojMsgBox::showErrorToUser(win, fmtstr); });
     }
-
-
-    if (!errors.empty()) {
-        string error = std::accumulate(errors.begin() + 1, errors.end(), *errors.begin(),
-                                       [](const string& e1, const string& e2) { return e1 + "\n" + e2; });
-        Util::execInUiThread([=]() {
-            string msg = FS(_F("Autosave failed with an error: {1}") % error);
-            XojMsgBox::showErrorToUser(getGtkWindow(), msg);
-        });
-    }
+    this->lastAutosaveFilename = std::move(newAutosaveFile);
 }
 
-void Control::setLastAutosaveFile(fs::path newAutosaveFile) { this->lastAutosaveFilename = std::move(newAutosaveFile); }
-
-void Control::deleteLastAutosaveFile(fs::path newAutosaveFile) {
-    fs::remove(this->lastAutosaveFilename);
-    this->lastAutosaveFilename = std::move(newAutosaveFile);
+void Control::deleteLastAutosaveFile() {
+    try {
+        if (fs::exists(this->lastAutosaveFilename)) {
+            fs::remove(this->lastAutosaveFilename);
+        }
+    } catch (const fs::filesystem_error& e) {
+        auto fmtstr = FS(_F("Could not remove old autosave file \"{1}\": {2}") % this->lastAutosaveFilename.string() %
+                         e.what());
+        Util::execInUiThread([fmtstr, win = getGtkWindow()]() { XojMsgBox::showErrorToUser(win, fmtstr); });
+    }
+    this->lastAutosaveFilename.clear();
 }
 
 auto Control::checkChangedDocument(Control* control) -> bool {
@@ -336,10 +310,6 @@ auto Control::autosaveCallback(Control* control) -> bool {
         // do nothing, nothing changed
         return true;
     }
-
-
-    g_message("Info: autosave document...");
-
 
     auto* job = new AutosaveJob(control);
     control->scheduler->addJob(job, JOB_PRIORITY_NONE);
@@ -509,16 +479,18 @@ void Control::selectAllOnPage() {
 
     win->getXournal()->clearSelection();
 
-    std::vector<Element*> elements = layer->clearNoFree();
+    auto elements = layer->clearNoFree();
     this->doc->unlock();
 
     if (!elements.empty()) {
-        InsertionOrder insertOrder;
-        insertOrder.reserve(elements.size());
+        InsertionOrder insertionOrder;
+        insertionOrder.reserve(elements.size());
         Element::Index n = 0;
-        std::transform(elements.begin(), elements.end(), std::back_inserter(insertOrder),
-                       [&n](Element* e) { return InsertionPosition(e, n++); });
-        auto [sel, rg] = SelectionFactory::createFromFloatingElements(this, page, layer, view, std::move(insertOrder));
+        for (auto&& e: elements) {
+            insertionOrder.emplace_back(std::move(e), n++);
+        }
+        auto [sel, rg] =
+                SelectionFactory::createFromFloatingElements(this, page, layer, view, std::move(insertionOrder));
 
         page->fireRangeChanged(rg);
 
@@ -532,7 +504,7 @@ void Control::reorderSelection(EditSelection::OrderChange change) {
         return;
     }
 
-    auto undoAction = sel->rearrangeInsertOrder(change);
+    auto undoAction = sel->rearrangeInsertionOrder(change);
     this->undoRedo->addUndoAction(std::move(undoAction));
 }
 
@@ -2028,16 +2000,16 @@ void Control::clipboardCutCopyEnabled(bool enabled) {
 void Control::clipboardPasteEnabled(bool enabled) { this->actionDB->enableAction(Action::PASTE, enabled); }
 
 void Control::clipboardPasteText(string text) {
-    Text* t = new Text();
+    auto t = std::make_unique<Text>();
     t->setText(text);
     t->setFont(settings->getFont());
     t->setColor(toolHandler->getTool(TOOL_TEXT).getColor());
 
-    clipboardPaste(t);
+    clipboardPaste(std::move(t));
 }
 
 void Control::clipboardPasteImage(GdkPixbuf* img) {
-    auto image = new Image();
+    auto image = std::make_unique<Image>();
     image->setImage(img);
 
     auto width =
@@ -2078,10 +2050,10 @@ void Control::clipboardPasteImage(GdkPixbuf* img) {
     image->setWidth(scaledWidth);
     image->setHeight(scaledHeight);
 
-    clipboardPaste(image);
+    clipboardPaste(std::move(image));
 }
 
-void Control::clipboardPaste(Element* e) {
+void Control::clipboardPaste(ElementPtr e) {
     double x = 0;
     double y = 0;
     auto pageNr = getCurrentPageNo();
@@ -2110,8 +2082,8 @@ void Control::clipboardPaste(Element* e) {
     e->setX(x);
     e->setY(y);
 
-    undoRedo->addUndoAction(std::make_unique<InsertUndoAction>(page, layer, e));
-    auto sel = SelectionFactory::createFromFloatingElement(this, page, layer, view, e);
+    undoRedo->addUndoAction(std::make_unique<InsertUndoAction>(page, layer, e.get()));
+    auto sel = SelectionFactory::createFromFloatingElement(this, page, layer, view, std::move(e));
 
     win->getXournal()->setSelection(sel.release());
 }
@@ -2141,7 +2113,7 @@ void Control::clipboardPasteXournal(ObjectInputStream& in) {
     this->doc->unlock();
 
     try {
-        std::unique_ptr<Element> element;
+        ElementPtr element;
         std::string version = in.readString();
         if (version != PROJECT_STRING) {
             g_warning("Paste from Xournal Version %s to Xournal Version %s", version.c_str(), PROJECT_STRING);
@@ -2175,7 +2147,7 @@ void Control::clipboardPasteXournal(ObjectInputStream& in) {
 
             pasteAddUndoAction->addElement(layer, element.get(), layer->indexOf(element.get()));
             // Todo: unique_ptr
-            selection->addElement(element.release(), std::numeric_limits<Element::Index>::max());
+            selection->addElement(std::move(element), std::numeric_limits<Element::Index>::max());
         }
         undoRedo->addUndoAction(std::move(pasteAddUndoAction));
 
