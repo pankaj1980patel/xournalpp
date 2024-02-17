@@ -54,8 +54,6 @@ constexpr size_t MAX_MIMETYPE_LENGTH = 25;
 
 LoadHandler::LoadHandler():
         attachedPdfMissing(false),
-        removePdfBackgroundFlag(false),
-        pdfReplacementAttach(false),
         pdfFilenameParsed(false),
         pos(PARSER_POS_NOT_STARTED),
         fileVersion(0),
@@ -115,13 +113,6 @@ auto LoadHandler::getLastError() -> string { return this->lastError; }
 auto LoadHandler::isAttachedPdfMissing() const -> bool { return this->attachedPdfMissing; }
 
 auto LoadHandler::getMissingPdfFilename() const -> string { return this->pdfMissing; }
-
-void LoadHandler::removePdfBackground() { this->removePdfBackgroundFlag = true; }
-
-void LoadHandler::setPdfReplacement(fs::path filepath, bool attachToDocument) {
-    this->pdfReplacementFilepath = std::move(filepath);
-    this->pdfReplacementAttach = attachToDocument;
-}
 
 auto LoadHandler::openFile(fs::path const& filepath) -> bool {
     this->filepath = filepath;
@@ -399,8 +390,9 @@ void LoadHandler::parseBgPixmap() {
         const std::string& imgData = *readResult;  ///< Do not remove the const qualifier - see below
 
         /**
-         * To avoid an unecessary copy, the data is still managed by the std::optional<std::string> instance. The input
-         * stream assumes the data will not be modified: do not remove the const qualifier on readResult or imgData
+         * To avoid an unecessary copy, the data is still managed by the std::unique_ptr<std::string> instance. The
+         * input stream assumes the data will not be modified: do not remove the const qualifier on readResult or
+         * imgData
          */
         xoj::util::GObjectSPtr<GInputStream> inputStream(
                 g_memory_input_stream_new_from_data(imgData.data(), static_cast<gssize>(imgData.size()), nullptr),
@@ -446,49 +438,43 @@ void LoadHandler::parseBgPdf() {
 
     if (!this->pdfFilenameParsed) {
 
-        if (this->pdfReplacementFilepath.empty()) {
-            const char* domain = LoadHandlerHelper::getAttrib("domain", false, this);
-            {
-                const char* sFilename = LoadHandlerHelper::getAttrib("filename", false, this);
-                if (sFilename == nullptr) {
-                    error("PDF Filename missing!");
-                    return;
-                }
-                pdfFilename = fs::u8path(sFilename);
+        const char* domain = LoadHandlerHelper::getAttrib("domain", false, this);
+        {
+            const char* sFilename = LoadHandlerHelper::getAttrib("filename", false, this);
+            if (sFilename == nullptr) {
+                error("PDF Filename missing!");
+                return;
             }
+            pdfFilename = fs::u8path(sFilename);
+        }
 
-            if (!strcmp("absolute", domain))  // Absolute OR relative path
-            {
-                if (pdfFilename.is_relative()) {
-                    pdfFilename = xournalFilepath.remove_filename() / pdfFilename;
-                }
-            } else if (!strcmp("attach", domain)) {
-                attachToDocument = true;
-                // Handle old format separately
-                if (this->isGzFile) {
-                    pdfFilename = (fs::path{xournalFilepath} += ".") += pdfFilename;
-                } else {
-                    auto readResult = readZipAttachment(pdfFilename);
-                    if (!readResult) {
-                        return;
-                    }
-                    std::string& pdfBytes = readResult.value();
-                    doc.readPdf(pdfFilename, false, attachToDocument, pdfBytes.data(), pdfBytes.size());
-
-                    if (!doc.getLastErrorMsg().empty()) {
-                        error("%s", FC(_F("Error reading PDF: {1}") % doc.getLastErrorMsg()));
-                    }
-
-                    this->pdfFilenameParsed = true;
+        if (!strcmp("absolute", domain))  // Absolute OR relative path
+        {
+            if (pdfFilename.is_relative()) {
+                pdfFilename = xournalFilepath.remove_filename() / pdfFilename;
+            }
+        } else if (!strcmp("attach", domain)) {
+            attachToDocument = true;
+            // Handle old format separately
+            if (this->isGzFile) {
+                pdfFilename = (fs::path{xournalFilepath} += ".") += pdfFilename;
+            } else {
+                auto pdfBytes = readZipAttachment(pdfFilename);
+                if (!pdfBytes) {
                     return;
                 }
-            } else {
-                error("%s", FC(_F("Unknown domain type: {1}") % domain));
+                doc.readPdf(pdfFilename, false, attachToDocument, std::move(pdfBytes));
+
+                if (!doc.getLastErrorMsg().empty()) {
+                    error("%s", FC(_F("Error reading PDF: {1}") % doc.getLastErrorMsg()));
+                }
+
+                this->pdfFilenameParsed = true;
                 return;
             }
         } else {
-            pdfFilename = this->pdfReplacementFilepath;
-            attachToDocument = this->pdfReplacementAttach;
+            error("%s", FC(_F("Unknown domain type: {1}") % domain));
+            return;
         }
 
         this->pdfFilenameParsed = true;
@@ -498,10 +484,13 @@ void LoadHandler::parseBgPdf() {
             if (!doc.getLastErrorMsg().empty()) {
                 error("%s", FC(_F("Error reading PDF: {1}") % doc.getLastErrorMsg()));
             }
-        } else if (attachToDocument) {
-            this->attachedPdfMissing = true;
         } else {
-            this->pdfMissing = pdfFilename.u8string();
+            doc.setPdfAttributes(pdfFilename, attachToDocument);
+            if (attachToDocument) {
+                this->attachedPdfMissing = true;
+            } else {
+                this->pdfMissing = pdfFilename.u8string();
+            }
         }
     }
 }
@@ -520,12 +509,7 @@ void LoadHandler::parsePage() {
         } else if (strcmp("pixmap", type) == 0) {
             parseBgPixmap();
         } else if (strcmp("pdf", type) == 0) {
-            if (this->removePdfBackgroundFlag) {
-                this->page->setBackgroundType(PageType(PageTypeFormat::Plain));
-                this->page->setBackgroundColor(Colors::white);
-            } else {
-                parseBgPdf();
-            }
+            parseBgPdf();
         } else {
             error("%s", FC(_F("Unknown background type: {1}") % type));
         }
@@ -1135,7 +1119,7 @@ auto LoadHandler::loadDocument(fs::path const& filepath) -> Document* {
     return &this->doc;
 }
 
-auto LoadHandler::readZipAttachment(fs::path const& filename) -> std::optional<std::string> {
+auto LoadHandler::readZipAttachment(fs::path const& filename) -> std::unique_ptr<std::string> {
     zip_stat_t attachmentFileStat;
     const int statStatus = zip_stat(this->zipFp, filename.u8string().c_str(), 0, &attachmentFileStat);
     if (statStatus != 0) {
@@ -1158,10 +1142,10 @@ auto LoadHandler::readZipAttachment(fs::path const& filename) -> std::optional<s
         return {};
     }
 
-    std::string data(length, 0);
+    auto data = std::make_unique<std::string>(length, 0);
     zip_uint64_t readBytes = 0;
     while (readBytes < length) {
-        const zip_int64_t read = zip_fread(attachmentFile, data.data() + readBytes, length - readBytes);
+        const zip_int64_t read = zip_fread(attachmentFile, data->data() + readBytes, length - readBytes);
         if (read == -1) {
             zip_fclose(attachmentFile);
             error("%s", FC(_F("Could not open attachment: {1}. Error message: No valid file size provided") %
@@ -1174,7 +1158,7 @@ auto LoadHandler::readZipAttachment(fs::path const& filename) -> std::optional<s
 
     zip_fclose(attachmentFile);
 
-    return {std::move(data)};
+    return data;
 }
 
 auto LoadHandler::getTempFileForPath(fs::path const& filename) -> fs::path {

@@ -26,8 +26,9 @@
     <property name="page-increment">10</property>
   </object>
   <object class="GtkAdjustment" id="adjustmentEdgePanMaxMult">
+    <property name="lower">0.10</property>
     <property name="upper">10</property>
-    <property name="step-increment">1</property>
+    <property name="step-increment">0.5</property>
     <property name="page-increment">10</property>
   </object>
   <object class="GtkAdjustment" id="adjustmentEdgePanSpeed">
@@ -347,6 +348,7 @@ If the file was not yet saved you can find it in ~/.cache/xournalpp/autosaves&lt
                                         <property name="use-markup">True</property>
                                         <property name="wrap">True</property>
                                         <property name="max-width-chars">85</property>
+                                        <property name="xalign">0</property>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -468,6 +470,7 @@ If the file was not yet saved you can find it in ~/.cache/xournalpp/autosaves&lt
                                         <property name="use-markup">True</property>
                                         <property name="wrap">True</property>
                                         <property name="max-width-chars">85</property>
+                                        <property name="xalign">0</property>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -914,6 +917,7 @@ Illegal characters are replaced with "_"</property>
                                         <property name="use-markup">True</property>
                                         <property name="wrap">True</property>
                                         <property name="max-width-chars">85</property>
+                                        <property name="xalign">0</property>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -1117,8 +1121,8 @@ Illegal characters are replaced with "_"</property>
                                         <property name="label" translatable="yes">&lt;i&gt;Pick an input stabilization algorithm and its parameters&lt;/i&gt;</property>
                                         <property name="use-markup">True</property>
                                         <property name="wrap">True</property>
-                                        <property name="width-chars">85</property>
                                         <property name="max-width-chars">85</property>
+                                        <property name="xalign">0</property>
                                       </object>
                                       <packing>
                                         <property name="left-attach">0</property>
@@ -1372,7 +1376,7 @@ Illegal characters are replaced with "_"</property>
                               <object class="GtkFrame" id="tabSettingsFrame">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
-                                <property name="label-xalign">0</property>
+                                <property name="label-xalign">0.009999999776482582</property>
                                 <child>
                                   <object class="GtkAlignment" id="tabSettingsAlignment">
                                     <property name="visible">True</property>
@@ -1388,7 +1392,7 @@ Illegal characters are replaced with "_"</property>
                                         <property name="row-homogeneous">True</property>
                                         <child>
                                           <object class="GtkCheckButton" id="cbUseSpacesAsTab">
-                                            <property name="label" translatable="yes">Indent using spaces</property> 
+                                            <property name="label" translatable="yes">Indent using spaces</property>
                                             <property name="visible">True</property>
                                             <property name="can-focus">True</property>
                                             <property name="receives-default">False</property>
@@ -1400,7 +1404,7 @@ Illegal characters are replaced with "_"</property>
                                           </packing>
                                         </child>
                                         <child>
-                                          <object class="GtkBox" id ="numberOfSpacesContainer">
+                                          <object class="GtkBox" id="numberOfSpacesContainer">
                                             <property name="visible">True</property>
                                             <property name="can-focus">False</property>
                                             <property name="spacing">14</property>
@@ -1533,6 +1537,7 @@ Illegal characters are replaced with "_"</property>
                                         <property name="use-markup">True</property>
                                         <property name="wrap">True</property>
                                         <property name="max-width-chars">85</property>
+                                        <property name="xalign">0</property>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -1692,6 +1697,7 @@ Illegal characters are replaced with "_"</property>
                                         <property name="use-markup">True</property>
                                         <property name="wrap">True</property>
                                         <property name="max-width-chars">85</property>
+                                        <property name="xalign">0</property>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -1867,6 +1873,7 @@ Illegal characters are replaced with "_"</property>
                                         <property name="use-markup">True</property>
                                         <property name="wrap">True</property>
                                         <property name="max-width-chars">85</property>
+                                        <property name="xalign">0</property>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -1966,6 +1973,7 @@ Illegal characters are replaced with "_"</property>
                                         <property name="use-markup">True</property>
                                         <property name="wrap">True</property>
                                         <property name="max-width-chars">85</property>
+                                        <property name="xalign">0</property>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -2229,6 +2237,7 @@ Illegal characters are replaced with "_"</property>
                                         <property name="use-markup">True</property>
                                         <property name="wrap">True</property>
                                         <property name="max-width-chars">85</property>
+                                        <property name="xalign">0</property>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -2288,6 +2297,7 @@ Illegal characters are replaced with "_"</property>
                                         <property name="use-markup">True</property>
                                         <property name="wrap">True</property>
                                         <property name="max-width-chars">85</property>
+                                        <property name="xalign">0</property>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -2430,6 +2440,7 @@ Illegal characters are replaced with "_"</property>
                                                     <property name="use-markup">True</property>
                                                     <property name="wrap">True</property>
                                                     <property name="max-width-chars">85</property>
+                                                    <property name="xalign">0</property>
                                                   </object>
                                                   <packing>
                                                     <property name="expand">False</property>
@@ -2590,6 +2601,9 @@ Illegal characters are replaced with "_"</property>
                                         <property name="can-focus">False</property>
                                         <property name="label" translatable="yes">&lt;i&gt;Use pinch gestures to zoom journal pages.&lt;/i&gt;</property>
                                         <property name="use-markup">True</property>
+                                        <property name="wrap">True</property>
+                                        <property name="max-width-chars">85</property>
+                                        <property name="xalign">0</property>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -2719,6 +2733,7 @@ This setting can make it easier to draw with touch. </property>
                                         <property name="use-markup">True</property>
                                         <property name="wrap">True</property>
                                         <property name="max-width-chars">85</property>
+                                        <property name="xalign">0</property>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -2779,6 +2794,7 @@ This setting can make it easier to draw with touch. </property>
                                         <property name="use-markup">True</property>
                                         <property name="wrap">True</property>
                                         <property name="max-width-chars">85</property>
+                                        <property name="xalign">0</property>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -3549,7 +3565,7 @@ This setting can make it easier to draw with touch. </property>
                               <object class="GtkFrame" id="grpSidebarSettings">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
-                                <property name="label-xalign">0</property>
+                                <property name="label-xalign">0.009999999776482582</property>
                                 <child>
                                   <object class="GtkBox">
                                     <property name="visible">True</property>
@@ -3686,7 +3702,7 @@ This setting can make it easier to draw with touch. </property>
                               <object class="GtkFrame">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
-                                <property name="label-xalign">0</property>
+                                <property name="label-xalign">0.009999999776482582</property>
                                 <child>
                                   <!-- n-columns=2 n-rows=2 -->
                                   <object class="GtkGrid">
@@ -3714,6 +3730,7 @@ This setting can make it easier to draw with touch. </property>
                                         <property name="can-focus">True</property>
                                         <property name="input-purpose">number</property>
                                         <property name="adjustment">adjustmentEdgePanMaxMult</property>
+                                        <property name="digits">1</property>
                                         <property name="numeric">True</property>
                                       </object>
                                       <packing>
@@ -4421,6 +4438,7 @@ This setting can make it easier to draw with touch. </property>
                                         <property name="use-markup">True</property>
                                         <property name="wrap">True</property>
                                         <property name="max-width-chars">85</property>
+                                        <property name="xalign">0</property>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -5302,6 +5320,7 @@ It must be short in time and length and we can't have ignored another stroke rec
                                         <property name="use-markup">True</property>
                                         <property name="wrap">True</property>
                                         <property name="max-width-chars">85</property>
+                                        <property name="xalign">0</property>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -5453,6 +5472,7 @@ Set this to 0% to always re-render on zoom.</property>
                                         <property name="label" translatable="yes">&lt;i&gt;Select the tool and Settings if you press the Default Button.&lt;/i&gt;</property>
                                         <property name="use-markup">True</property>
                                         <property name="max-width-chars">85</property>
+                                        <property name="xalign">0</property>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -5662,6 +5682,7 @@ Disabling audio for a single session can be achieved using the &lt;tt&gt;--disab
                                         <property name="label" translatable="yes">&lt;i&gt;Audio recordings are currently stored in a separate folder and referenced from the journal.&lt;/i&gt;</property>
                                         <property name="use-markup">True</property>
                                         <property name="max-width-chars">85</property>
+                                        <property name="xalign">0</property>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -5745,6 +5766,7 @@ If available select &lt;small&gt;&lt;tt&gt;pulse&lt;/tt&gt;&lt;/small&gt; as inp
                                         <property name="use-markup">True</property>
                                         <property name="wrap">True</property>
                                         <property name="max-width-chars">85</property>
+                                        <property name="xalign">0</property>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -6081,6 +6103,7 @@ If available select &lt;small&gt;&lt;tt&gt;pulse&lt;/tt&gt;&lt;/small&gt; as inp
                                         <property name="can-focus">False</property>
                                         <property name="label" translatable="yes">&lt;i&gt;Select language (requires restart)&lt;/i&gt;</property>
                                         <property name="use-markup">True</property>
+                                        <property name="xalign">0</property>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>

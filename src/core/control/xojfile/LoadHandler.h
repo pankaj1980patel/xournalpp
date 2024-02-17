@@ -61,9 +61,6 @@ public:
     bool isAttachedPdfMissing() const;
     std::string getMissingPdfFilename() const;
 
-    void removePdfBackground();
-    void setPdfReplacement(fs::path filepath, bool attachToDocument);
-
     /** @return The version of the loaded file */
     int getFileVersion() const;
 
@@ -115,7 +112,7 @@ private:
      * Returns the contents of the zip attachment with the given file name, or
      * nullopt if there is no such file.
      */
-    std::optional<std::string> readZipAttachment(fs::path const& filename);
+    std::unique_ptr<std::string> readZipAttachment(fs::path const& filename);
 
     fs::path getTempFileForPath(fs::path const& filename);
 
@@ -123,10 +120,6 @@ private:
     std::string lastError;
     std::string pdfMissing;
     bool attachedPdfMissing;
-
-    bool removePdfBackgroundFlag;
-    fs::path pdfReplacementFilepath;
-    bool pdfReplacementAttach;
 
     fs::path filepath;
 

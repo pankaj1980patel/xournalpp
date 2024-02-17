@@ -3,6 +3,7 @@
 #include <array>
 #include <ctime>  // for size_t, localtime, strf...
 #include <iomanip>
+#include <memory>
 #include <sstream>
 #include <string>   // for string
 #include <utility>  // for move, pair
@@ -305,14 +306,19 @@ void Document::updateIndexPageNumbers() {
     }
 }
 
-auto Document::readPdf(const fs::path& filename, bool initPages, bool attachToDocument, gpointer data, gsize length)
-        -> bool {
+void Document::setPdfAttributes(const fs::path& filename, bool attachToDocument) {
+    this->pdfFilepath = filename;
+    this->attachPdf = attachToDocument;
+}
+
+auto Document::readPdf(const fs::path& filename, bool initPages, bool attachToDocument,
+                       std::unique_ptr<std::string> data) -> bool {
     GError* popplerError = nullptr;
 
     lock();
 
     if (data != nullptr) {
-        if (!pdfDocument.load(data, length, password, &popplerError)) {
+        if (!pdfDocument.load(std::move(data), password, &popplerError)) {
             lastError = FS(_F("Document not loaded! ({1}), {2}") % filename.u8string() % popplerError->message);
             g_error_free(popplerError);
             unlock();
@@ -359,6 +365,8 @@ auto Document::readPdf(const fs::path& filename, bool initPages, bool attachToDo
 
     return true;
 }
+
+void Document::resetPdf() { pdfDocument.reset(); }
 
 void Document::setPageSize(PageRef p, double width, double height) { p->setSize(width, height); }
 
