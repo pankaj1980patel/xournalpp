@@ -87,14 +87,19 @@ public:
     void initWindow(MainWindow* win);
 
 public:
-    // Menu File
     bool newFile(std::string pageTemplate = "", fs::path filepath = {});
-    bool openFile(fs::path filepath = "", int scrollToPage = -1, bool forceOpen = false);
+
+    /// Shows an open file dialog and opens the selected file
+    void askToOpenFile();
+    /// Opens the provided path. Returns true on success.
+    bool openFile(fs::path filepath, int scrollToPage = -1, bool forceOpen = false);
+    /// Shows an open file dialog and opens the selected file
+    void askToAnnotatePdf();
+    /// Opens the provided path. Returns true on success.
     bool annotatePdf(fs::path filepath, bool attachToDocument);
     void print();
     void exportAsPdf();
     void exportAs();
-    void exportBase(BaseExportJob* job);
     void quit(bool allowCancel = true);
 
     /**
@@ -119,9 +124,12 @@ public:
      */
     bool close(bool allowDestroy = false, bool allowCancel = true);
 
-    // Asks user to replace an existing file when saving / exporting, since we add the extension
-    // after the OK, we need to check manually
-    bool askToReplace(fs::path const& filepath) const;
+    /**
+     * @brief Asks user to replace an existing file when saving / exporting, since we add the extension
+     *        after the OK, we need to check manually
+     * @param parent the dialog which wants to override something
+     */
+    bool askToReplace(fs::path const& filepath, GtkWindow* parent) const;
 
     // Menu edit
     void showSettings();
@@ -388,6 +396,11 @@ private:
      * Prompt the user that the PDF background is missing and offer solution options
      */
     void promptMissingPdf(LoadHandler& loadHandler, const fs::path& filepath);
+
+    /**
+     * Handle the response from the missing PDF dialog
+     */
+    void missingPdfDialogResponseHandler(const fs::path& proposedPdfFilepath, int responseId);
 
     /**
      * "Closes" the document, preparing the editor for a new document.

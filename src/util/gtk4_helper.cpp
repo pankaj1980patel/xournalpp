@@ -3,6 +3,7 @@
 #include <gtk/gtk.h>
 
 #include "util/Assert.h"
+#include "util/raii/CStringWrapper.h"
 
 namespace {
 void set_child(GtkContainer* c, GtkWidget* child) {
@@ -45,6 +46,10 @@ int gtk_widget_get_width(GtkWidget* widget) {
     }
 }
 
+GtkClipboard* gtk_widget_get_clipboard(GtkWidget* widget) {
+    return gtk_widget_get_clipboard(widget, GDK_SELECTION_CLIPBOARD);
+}
+
 /*** GtkDrawingArea ****/
 
 void gtk_drawing_area_set_draw_func(GtkDrawingArea* area, GtkDrawingAreaDrawFunc draw_func, gpointer user_data,
@@ -61,17 +66,44 @@ void gtk_drawing_area_set_draw_func(GtkDrawingArea* area, GtkDrawingAreaDrawFunc
                               gtk_widget_get_allocation(GTK_WIDGET(self), &alloc);
                               d->draw_func(self, cr, alloc.width, alloc.height, d->data);
                           }),
-                          data, GClosureNotify(+[](Data* d, GClosure*) {
-                              if (d && d->destroy) {
-                                  d->destroy(d->data);
+                          data, GClosureNotify(+[](gpointer d, GClosure*) {
+                              auto* data = static_cast<Data*>(d);
+                              if (data && data->destroy) {
+                                  data->destroy(data->data);
                               }
-                              delete d;
+                              delete data;
+                          }),
+                          GConnectFlags(0U));  // 0 = G_CONNECT_DEFAULT only introduced in GObject 2.74
+}
+
+/**** GtkScale ****/
+
+void gtk_scale_set_format_value_func(GtkScale* scale, GtkScaleFormatValueFunc func, gpointer user_data,
+                                     GDestroyNotify destroy_notify) {
+    xoj_assert(func != nullptr);
+    struct Data {
+        gpointer data;
+        GtkScaleFormatValueFunc func;
+        GDestroyNotify destroy;
+    };
+    Data* data = new Data{user_data, func, destroy_notify};
+    g_signal_connect_data(scale, "format-value", G_CALLBACK(+[](GtkScale* self, gdouble value, gpointer user_data) {
+                              auto* data = static_cast<Data*>(user_data);
+                              return data->func(self, value, data->data);
+                          }),
+                          data, GClosureNotify(+[](gpointer d, GClosure*) {
+                              auto* data = static_cast<Data*>(d);
+                              if (data && data->destroy) {
+                                  data->destroy(data->data);
+                              }
+                              delete data;
                           }),
                           GConnectFlags(0U));  // 0 = G_CONNECT_DEFAULT only introduced in GObject 2.74
 }
 
 /**** GtkScrolledWindow ****/
 
+GtkWidget* gtk_scrolled_window_new() { return gtk_scrolled_window_new(nullptr, nullptr); }
 void gtk_scrolled_window_set_child(GtkScrolledWindow* win, GtkWidget* child) { set_child(GTK_CONTAINER(win), child); }
 GtkWidget* gtk_scrolled_window_get_child(GtkScrolledWindow* win) { return gtk_bin_get_child(GTK_BIN(win)); }
 
@@ -110,3 +142,22 @@ void gtk_label_set_wrap(GtkLabel* label, gboolean wrap) { gtk_label_set_line_wra
 void gtk_label_set_wrap_mode(GtkLabel* label, PangoWrapMode wrap_mode) {
     gtk_label_set_line_wrap_mode(label, wrap_mode);
 }
+
+/**** GtkIMContext ****/
+void gtk_im_context_set_client_widget(GtkIMContext* context, GtkWidget* widget) {
+    gtk_im_context_set_client_window(context, widget ? gtk_widget_get_parent_window(widget) : nullptr);
+}
+
+/**** GtkFileChooserDialog ****/
+gboolean gtk_file_chooser_add_shortcut_folder(GtkFileChooser* chooser, GFile* file, GError** error) {
+    auto uri = xoj::util::OwnedCString::assumeOwnership(g_file_get_uri(file));
+    return gtk_file_chooser_add_shortcut_folder(chooser, uri.get(), error);
+}
+gboolean gtk_file_chooser_set_current_folder(GtkFileChooser* chooser, GFile* file, GError** error) {
+    return gtk_file_chooser_set_current_folder_file(chooser, file, error);
+}
+
+/**** GtkListBox ****/
+void gtk_list_box_append(GtkListBox* box, GtkWidget* widget) { gtk_container_add(GTK_CONTAINER(box), widget); }
+void gtk_list_box_row_set_child(GtkListBoxRow* row, GtkWidget* w) { set_child(GTK_CONTAINER(row), w); }
+GtkWidget* gtk_list_box_row_get_child(GtkListBoxRow* row) { return gtk_bin_get_child(GTK_BIN(row)); }

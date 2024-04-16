@@ -1,9 +1,10 @@
 #include "Control.h"
 
-#include <algorithm>  // for max
-#include <cstdlib>    // for size_t
-#include <exception>  // for exce...
-#include <iterator>   // for end
+#include <algorithm>   // for max
+#include <cstdlib>     // for size_t
+#include <exception>   // for exce...
+#include <functional>  // for bind
+#include <iterator>    // for end
 #include <locale>
 #include <memory>    // for make...
 #include <numeric>   // for accu...
@@ -52,6 +53,7 @@
 #include "gui/dialog/SelectOpacityDialog.h"                      // for Opac...
 #include "gui/dialog/SettingsDialog.h"                           // for Sett...
 #include "gui/dialog/ToolbarManageDialog.h"                      // for Tool...
+#include "gui/dialog/XojOpenDlg.h"                               // for XojO...
 #include "gui/dialog/toolbarCustomize/ToolbarDragDropHandler.h"  // for Tool...
 #include "gui/inputdevices/CompassInputHandler.h"                // for Comp...
 #include "gui/inputdevices/GeometryToolInputHandler.h"           // for Geom...
@@ -80,7 +82,6 @@
 #include "model/XojPage.h"                                       // for XojPage
 #include "pdf/base/XojPdfPage.h"                                 // for XojP...
 #include "plugin/PluginController.h"                             // for Plug...
-#include "stockdlg/XojOpenDlg.h"                                 // for XojO...
 #include "undo/AddUndoAction.h"                                  // for AddU...
 #include "undo/InsertDeletePageUndoAction.h"                     // for Inse...
 #include "undo/InsertUndoAction.h"                               // for Inse...
@@ -529,13 +530,28 @@ auto Control::firePageSelected(const PageRef& page) -> size_t {
 void Control::firePageSelected(size_t page) { DocumentHandler::firePageSelected(page); }
 
 void Control::manageToolbars() {
-    xoj::popup::PopupWindowWrapper<ToolbarManageDialog> dlg(this->gladeSearchPath, this->win->getToolbarModel(),
-                                                            [win = this->win]() {
-                                                                win->updateToolbarMenu();
-                                                                auto filepath = Util::getConfigFile(TOOLBAR_CONFIG);
-                                                                win->getToolbarModel()->save(filepath);
-                                                            });
+    xoj::popup::PopupWindowWrapper<ToolbarManageDialog> dlg(
+            this->gladeSearchPath, this->win->getToolbarModel(), [win = this->win]() {
+                if (const auto& tbs = win->getToolbarModel()->getToolbars();
+                    std::none_of(tbs.begin(), tbs.end(),
+                                 [tb = win->getSelectedToolbar()](const auto& t) { return t.get() == tb; })) {
+                    // The active toolbar has been deleted!
+                    xoj_assert(!tbs.empty());
+                    win->toolbarSelected(tbs.front().get());
+                    XojMsgBox::showErrorToUser(
+                            GTK_WINDOW(win->getWindow()),
+                            _("You deleted the active toolbar. Falling back to the default toolbar."));
+                }
+
+                win->updateToolbarMenu();
+                auto filepath = Util::getConfigFile(TOOLBAR_CONFIG);
+                win->getToolbarModel()->save(filepath);
+            });
     dlg.show(GTK_WINDOW(this->win->getWindow()));
+
+    this->win->updateToolbarMenu();
+    auto filepath = Util::getConfigFile(TOOLBAR_CONFIG);
+    this->win->getToolbarModel()->save(filepath);
 }
 
 void Control::customizeToolbars() {
@@ -549,11 +565,10 @@ void Control::customizeToolbars() {
                                   this->win->getSelectedToolbar()->getName()),
                                std::string(), {{_("Yes"), YES}, {_("No"), NO}}, [ctrl = this](int response) {
                                    if (response == YES) {
-                                       auto* data = new ToolbarData(*ctrl->win->getSelectedToolbar());
+                                       auto data = std::make_unique<ToolbarData>(*ctrl->win->getSelectedToolbar());
                                        ToolbarModel* model = ctrl->win->getToolbarModel();
-                                       model->initCopyNameId(data);
-                                       model->add(data);
-                                       ctrl->win->toolbarSelected(data);
+                                       model->initCopyNameId(data.get());
+                                       ctrl->win->toolbarSelected(model->add(std::move(data)));
                                        ctrl->win->updateToolbarMenu();
 
                                        xoj_assert(!ctrl->win->getSelectedToolbar()->isPredefined());
@@ -892,6 +907,7 @@ void Control::setViewPresentationMode(bool enabled) {
     this->actionDB->enableAction(Action::ZOOM_OUT, !enabled);
     this->actionDB->enableAction(Action::ZOOM_FIT, !enabled);
     this->actionDB->enableAction(Action::ZOOM_100, !enabled);
+    this->actionDB->enableAction(Action::ZOOM, !enabled);
 
     // TODO Figure out how to replace this
     // fireEnableAction(ACTION_FOOTER_ZOOM_SLIDER, !enabled);
@@ -1316,14 +1332,16 @@ auto Control::shouldFileOpen(fs::path const& filepath) const -> bool {
     return !isChild;
 }
 
-auto Control::openFile(fs::path filepath, int scrollToPage, bool forceOpen) -> bool {
-    if (filepath.empty()) {
-        bool attachPdf = false;
-        XojOpenDlg dlg(getGtkWindow(), this->settings);
-        filepath = dlg.showOpenDialog(false, attachPdf);
-        g_message("%s", (_F("file: {1}") % filepath.string()).c_str());
-    }
+void Control::askToOpenFile() {
+    XojOpenDlg::showOpenFileDialog(this->getGtkWindow(), this->settings, [this](fs::path path) {
+        g_message("%s", (_F("file: {1}") % path.string()).c_str());
+        if (!path.empty()) {
+            openFile(std::move(path));
+        }
+    });
+}
 
+auto Control::openFile(fs::path filepath, int scrollToPage, bool forceOpen) -> bool {
     if (filepath.empty() || (!forceOpen && !shouldFileOpen(filepath))) {
         return false;
     }
@@ -1455,6 +1473,8 @@ void Control::fileLoaded(int scrollToPage) {
     updateDeletePageButton();
 }
 
+enum class MissingPdfDialogOptions : gint { USE_PROPOSED, SELECT_OTHER, REMOVE, CANCEL };
+
 void Control::promptMissingPdf(LoadHandler& loadHandler, const fs::path& filepath) {
     const fs::path missingFilePath = fs::path(loadHandler.getMissingPdfFilename());
 
@@ -1496,37 +1516,35 @@ void Control::promptMissingPdf(LoadHandler& loadHandler, const fs::path& filepat
         msg += FS(_F("\nProposed replacement file: \"{1}\"") % proposedPdfFilepath.string());
     }
 
-    // create the dialog
-    GtkWidget* dialog = gtk_message_dialog_new(getGtkWindow(), GTK_DIALOG_MODAL, GTK_MESSAGE_QUESTION, GTK_BUTTONS_NONE,
-                                               "%s", msg.c_str());
-
-    enum dialogOptions { USE_PROPOSED, SELECT_OTHER, REMOVE, CANCEL };
-
+    // show the dialog
+    std::vector<XojMsgBox::Button> buttons = {
+            {_("Select another PDF"), static_cast<int>(MissingPdfDialogOptions::SELECT_OTHER)},
+            {_("Remove PDF Background"), static_cast<int>(MissingPdfDialogOptions::REMOVE)},
+            {_("Cancel"), static_cast<int>(MissingPdfDialogOptions::CANCEL)}};
     if (proposePdfFile) {
-        gtk_dialog_add_button(GTK_DIALOG(dialog), _("Use proposed PDF"), USE_PROPOSED);
+        buttons.insert(buttons.begin(),
+                       {_("Use proposed PDF"), static_cast<int>(MissingPdfDialogOptions::USE_PROPOSED)});
     }
-    gtk_dialog_add_button(GTK_DIALOG(dialog), _("Select another PDF"), SELECT_OTHER);
-    gtk_dialog_add_button(GTK_DIALOG(dialog), _("Remove PDF Background"), REMOVE);
-    gtk_dialog_add_button(GTK_DIALOG(dialog), _("Cancel"), CANCEL);
-    gtk_window_set_transient_for(GTK_WINDOW(dialog), GTK_WINDOW(this->getWindow()->getWindow()));
-    int res = gtk_dialog_run(GTK_DIALOG(dialog));
-    gtk_widget_destroy(dialog);
+    XojMsgBox::askQuestion(
+            this->getGtkWindow(), _("Missing PDF background file"), msg, buttons,
+            std::bind(&Control::missingPdfDialogResponseHandler, this, proposedPdfFilepath, std::placeholders::_1));
+}
 
-    switch (res) {
-        case USE_PROPOSED:
+void Control::missingPdfDialogResponseHandler(const fs::path& proposedPdfFilepath, int responseId) {
+    switch (static_cast<MissingPdfDialogOptions>(responseId)) {
+        case MissingPdfDialogOptions::USE_PROPOSED:
             if (!proposedPdfFilepath.empty()) {
                 this->pageBackgroundChangeController->changePdfPagesBackground(proposedPdfFilepath, false);
             }
             break;
-        case SELECT_OTHER: {
-            bool attachToDocument = false;
-            XojOpenDlg dlg(getGtkWindow(), this->settings);
-            auto pdfFilename = dlg.showOpenDialog(true, attachToDocument);
-            if (!pdfFilename.empty()) {
-                this->pageBackgroundChangeController->changePdfPagesBackground(pdfFilename, attachToDocument);
-            }
-        } break;
-        case REMOVE:
+        case MissingPdfDialogOptions::SELECT_OTHER:
+            XojOpenDlg::showAnnotatePdfDialog(getGtkWindow(), settings, [this](fs::path path, bool attachPdf) {
+                if (!path.empty()) {
+                    this->pageBackgroundChangeController->changePdfPagesBackground(path, attachPdf);
+                }
+            });
+            break;
+        case MissingPdfDialogOptions::REMOVE:
             this->pageBackgroundChangeController->applyBackgroundToAllPages(PageType(PageTypeFormat::Plain));
             break;
         default:
@@ -1571,18 +1589,18 @@ void Control::loadMetadata(MetadataEntry md) {
                     &xoj::util::destroy_cb<MetadataCallbackData>);
 }
 
+void Control::askToAnnotatePdf() {
+    XojOpenDlg::showAnnotatePdfDialog(getGtkWindow(), settings,
+                                      [this](fs::path path, bool attachPdf) { annotatePdf(path, attachPdf); });
+}
+
 auto Control::annotatePdf(fs::path filepath, bool attachToDocument) -> bool {
-    if (!this->close(false)) {
+    if (filepath.empty()) {
         return false;
     }
 
-    // Prompt the user for a path if none is provided.
-    if (filepath.empty()) {
-        XojOpenDlg dlg(getGtkWindow(), this->settings);
-        filepath = dlg.showOpenDialog(true, attachToDocument);
-        if (filepath.empty()) {
-            return false;
-        }
+    if (!this->close(false)) {
+        return false;
     }
 
     // First, we create a dummy document and load the PDF into it.
@@ -1707,11 +1725,9 @@ auto Control::showSaveDialog() -> bool {
             gtk_file_chooser_dialog_new(_("Save File"), getGtkWindow(), GTK_FILE_CHOOSER_ACTION_SAVE, _("_Cancel"),
                                         GTK_RESPONSE_CANCEL, _("_Save"), GTK_RESPONSE_OK, nullptr);
 
-    gtk_file_chooser_set_local_only(GTK_FILE_CHOOSER(dialog), true);
-
     GtkFileFilter* filterXoj = gtk_file_filter_new();
     gtk_file_filter_set_name(filterXoj, _("Xournal++ files"));
-    gtk_file_filter_add_pattern(filterXoj, "*.xopp");
+    gtk_file_filter_add_mime_type(filterXoj, "application/x-xopp");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), filterXoj);
 
     this->doc->lock();
@@ -1719,14 +1735,10 @@ auto Control::showSaveDialog() -> bool {
     auto suggested_name = this->doc->createSaveFilename(Document::XOPP, this->settings->getDefaultSaveName());
     this->doc->unlock();
 
-    gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), Util::toGFilename(suggested_folder).c_str());
+    gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), Util::toGFile(suggested_folder).get(), nullptr);
     gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(dialog), Util::toGFilename(suggested_name).c_str());
     gtk_file_chooser_add_shortcut_folder(GTK_FILE_CHOOSER(dialog),
-                                         Util::toGFilename(this->settings->getLastOpenPath()).c_str(), nullptr);
-
-    gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(dialog), false);  // handled below
-
-    gtk_window_set_transient_for(GTK_WINDOW(dialog), GTK_WINDOW(this->getWindow()->getWindow()));
+                                         Util::toGFile(this->settings->getLastOpenPath()).get(), nullptr);
 
     while (true) {
         if (gtk_dialog_run(GTK_DIALOG(dialog)) != GTK_RESPONSE_OK) {
@@ -1734,22 +1746,24 @@ auto Control::showSaveDialog() -> bool {
             return false;
         }
 
-        auto fileTmp = Util::fromGFilename(gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog)));
+        auto fileTmp = Util::fromGFile(
+                xoj::util::GObjectSPtr<GFile>(gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog)), xoj::util::adopt)
+                        .get());
         Util::clearExtensions(fileTmp);
         fileTmp += ".xopp";
         // Since we add the extension after the OK button, we have to check manually on existing files
-        if (askToReplace(fileTmp)) {
+        if (askToReplace(fileTmp, GTK_WINDOW(dialog))) {
             break;
         }
     }
 
-    auto filename = Util::fromGFilename(gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog)));
-    settings->setLastSavePath(filename.parent_path());
+    auto file = Util::fromGFile(
+            xoj::util::GObjectSPtr<GFile>(gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog)), xoj::util::adopt).get());
+    settings->setLastSavePath(file.parent_path());
     gtk_widget_destroy(dialog);
 
     this->doc->lock();
-
-    this->doc->setFilepath(filename);
+    this->doc->setFilepath(file);
     this->doc->unlock();
 
     return true;
@@ -1835,24 +1849,24 @@ void Control::updateWindowTitle() {
 
 void Control::exportAsPdf() {
     this->clearSelectionEndText();
-    exportBase(new PdfExportJob(this));
+
+    auto* job = new PdfExportJob(this);
+    job->showFileChooser(
+            [ctrl = this, job]() {
+                ctrl->scheduler->addJob(job, JOB_PRIORITY_NONE);
+                job->unref();
+            },
+            [ctrl = this, job]() {
+                // The job blocked, so we have to unblock, because the job unblocks only after
+                ctrl->unblock();
+                job->unref();
+            });
 }
 
 void Control::exportAs() {
     this->clearSelectionEndText();
-    CustomExportJob* job = new CustomExportJob(this);
-    job->showFilechooser();
-    job->unref();
-}
-
-void Control::exportBase(BaseExportJob* job) {
-    if (job->showFilechooser()) {
-        this->scheduler->addJob(job, JOB_PRIORITY_NONE);
-    } else {
-        // The job blocked, so we have to unblock, because the job unblocks only after run
-        unblock();
-    }
-    job->unref();
+    auto* job = new CustomExportJob(this);
+    job->showDialogAndRun();
 }
 
 auto Control::saveAs() -> bool {
@@ -1973,11 +1987,11 @@ void Control::initButtonTool() {
     }
 }
 
-auto Control::askToReplace(fs::path const& filepath) const -> bool {
+auto Control::askToReplace(fs::path const& filepath, GtkWindow* parent) const -> bool {
     if (fs::exists(filepath)) {
         std::string msg = FS(FORMAT_STR("The file {1} already exists! Do you want to replace it?") %
                              filepath.filename().u8string());
-        int res = XojMsgBox::replaceFileQuestion(getGtkWindow(), msg);
+        int res = XojMsgBox::replaceFileQuestion(parent, msg);
         return res == GTK_RESPONSE_OK;
     }
     return true;

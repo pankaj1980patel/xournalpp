@@ -152,7 +152,9 @@ auto Util::fromGFile(GFile* file) -> fs::path {
     return ret;
 }
 
-auto Util::toGFile(fs::path const& path) -> GFile* { return g_file_new_for_path(path.u8string().c_str()); }
+auto Util::toGFile(fs::path const& path) -> xoj::util::GObjectSPtr<GFile> {
+    return xoj::util::GObjectSPtr<GFile>(g_file_new_for_path(path.u8string().c_str()), xoj::util::adopt);
+}
 
 
 void Util::openFileWithDefaultApplication(const fs::path& filename) {
@@ -189,8 +191,7 @@ auto Util::getGettextFilepath(const char* localeDir) -> fs::path {
         }
     }
     const char* dir = (gettextEnv) ? directories.c_str() : localeDir;
-    g_message("TEXTDOMAINDIR = %s, Platform-specific locale dir = %s, chosen directory = %s", gettextEnv, localeDir,
-              dir);
+    g_debug("TEXTDOMAINDIR = %s, Platform-specific locale dir = %s, chosen directory = %s", gettextEnv, localeDir, dir);
     return fs::path(dir);
 }
 

@@ -19,6 +19,8 @@
 
 #include "util/raii/GtkWindowUPtr.h"
 
+#include "filesystem.h"
+
 class XojMsgBox final {
 public:
     XojMsgBox(
@@ -30,6 +32,7 @@ public:
 private:
     xoj::util::GtkWindowUPtr window;
     std::function<void(int)> callback;  ///< The parameter is the dialog's response ID
+    gulong signalId;
 
 public:
     struct Button {
@@ -61,11 +64,20 @@ public:
     static void showMessageToUser(GtkWindow* win, const std::string& title, const std::string& msg,
                                   GtkMessageType type);
     static void showErrorToUser(GtkWindow* win, const std::string& msg);
-    static void showErrorAndQuit(std::string& msg, int exitCode);
+
+    /// @brief This should be used for fatal errors, typically in early GUI startup (missing UI main file or so).
+    [[noreturn]] static void showErrorAndQuit(std::string& msg, int exitCode);
+
     static void showPluginMessage(const std::string& pluginName, const std::string& msg, bool error = false);
     [[deprecated("Will be removed when porting to gtk4")]] static int askPluginQuestion(
             const std::string& pluginName, const std::string& msg, const std::vector<Button>& buttons,
             bool error = false);
     static int replaceFileQuestion(GtkWindow* win, const std::string& msg);
     static void showHelp(GtkWindow* win);
+
+    /**
+     * @brief Calls writeToFile(file) if either file is not already present in the filesystem, or is the user answers
+     * "Overwrite" to a popup dialog.
+     */
+    static void replaceFileQuestion(GtkWindow* win, fs::path file, std::function<void(const fs::path&)> writeToFile);
 };

@@ -60,19 +60,19 @@ public:
     void toolbarSelected(ToolbarData* d);
     ToolbarData* getSelectedToolbar() const;
 
-    /**
-     * These methods are only used internally and for toolbar configuration
-     */
-    ToolbarData* clearToolbar();
+private:
+    const ToolbarData* clearToolbar();
     void loadToolbar(ToolbarData* d);
 
-
+public:
     void updatePageNumbers(size_t page, size_t pagecount, size_t pdfpage);
 
     void setMaximized(bool maximized);
     bool isMaximized() const;
 
     void setFullscreen(bool enabled) const;
+
+    bool isDarkTheme() const;
 
     XournalView* getXournal() const;
 
@@ -90,7 +90,6 @@ public:
     void setUndoDescription(const std::string& description);
     void setRedoDescription(const std::string& description);
 
-    SpinPageAdapter* getSpinPageNo() const;
     ToolbarModel* getToolbarModel() const;
     ToolMenuHandler* getToolMenuHandler() const;
 
@@ -112,7 +111,7 @@ public:
      *
      * @see Util::toWidgetCoords()
      */
-    utl::Point<double> getNegativeXournalWidgetPos() const;
+    xoj::util::Point<double> getNegativeXournalWidgetPos() const;
 
     /**
      * Disable kinetic scrolling if there is a touchscreen device that was manually mapped to another enabled input
@@ -173,6 +172,8 @@ private:
     std::unique_ptr<Menubar> menubar;
 
     bool maximized = false;
+    bool darkMode = false;
+    bool modifiedGtkSettingsTheme = false;
 
     ToolbarWidgetArray toolbarWidgets;
 
