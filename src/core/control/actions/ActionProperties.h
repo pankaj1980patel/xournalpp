@@ -45,6 +45,8 @@
  *      * (optional) a static member function
  *              static bool initiallyEnabled(Control*);
  *          Defaults to [](Control*){return true;}
+ *      * (optional) a member type app_namespace = std::true_type if the action should be added to the app. namespace
+ *          Otherwise, it is added to the win. namespace
  *
  * Note that both state_type and parameter_type must be convertible to GVariant. See util/GVariantTemplate.h
  */
@@ -117,6 +119,12 @@ struct ActionProperties<Action::PRINT> {
 };
 template <>
 struct ActionProperties<Action::QUIT> {
+    using app_namespace = std::true_type;
+#ifdef __APPLE__
+    static constexpr const char* accelerators[] = {"<Meta>Q", nullptr};
+#else
+    static constexpr const char* accelerators[] = {"<Ctrl>Q", nullptr};
+#endif
     static void callback(GSimpleAction*, GVariant*, Control* ctrl) { ctrl->quit(); }
 };
 
@@ -231,7 +239,8 @@ struct ActionProperties<Action::GRID_SNAPPING> {
 };
 
 template <>
-struct ActionProperties<Action::SETTINGS> {
+struct ActionProperties<Action::PREFERENCES> {
+    using app_namespace = std::true_type;
     static void callback(GSimpleAction*, GVariant*, Control* ctrl) { ctrl->showSettings(); }
 };
 
@@ -491,6 +500,15 @@ template <>
 struct ActionProperties<Action::DUPLICATE_PAGE> {
     static void callback(GSimpleAction*, GVariant*, Control* ctrl) { ctrl->duplicatePage(); }
 };
+template <>
+struct ActionProperties<Action::MOVE_PAGE_TOWARDS_BEGINNING> {
+    static void callback(GSimpleAction*, GVariant*, Control* ctrl) { ctrl->movePageTowardsBeginning(); }
+};
+template <>
+struct ActionProperties<Action::MOVE_PAGE_TOWARDS_END> {
+    static void callback(GSimpleAction*, GVariant*, Control* ctrl) { ctrl->movePageTowardsEnd(); }
+};
+
 template <>
 struct ActionProperties<Action::APPEND_NEW_PDF_PAGES> {
     static void callback(GSimpleAction*, GVariant*, Control* ctrl) { ctrl->appendNewPdfPages(); }
@@ -834,6 +852,7 @@ struct ActionProperties<Action::HELP> {
 };
 template <>
 struct ActionProperties<Action::ABOUT> {
+    using app_namespace = std::true_type;
     static void callback(GSimpleAction*, GVariant*, Control* ctrl) { ctrl->showAbout(); }
 };
 
@@ -920,6 +939,26 @@ template <>
 struct ActionProperties<Action::LAYER_NEW> {
     static void callback(GSimpleAction*, GVariant*, Control* ctrl) { ctrl->getLayerController()->addNewLayer(); }
 };
+
+template <>
+struct ActionProperties<Action::LAYER_COPY> {
+    static void callback(GSimpleAction*, GVariant*, Control* ctrl) { ctrl->getLayerController()->copyCurrentLayer(); }
+};
+
+template <>
+struct ActionProperties<Action::LAYER_MOVE_UP> {
+    static void callback(GSimpleAction*, GVariant*, Control* ctrl) {
+        ctrl->getLayerController()->moveCurrentLayer(true);
+    }
+};
+
+template <>
+struct ActionProperties<Action::LAYER_MOVE_DOWN> {
+    static void callback(GSimpleAction*, GVariant*, Control* ctrl) {
+        ctrl->getLayerController()->moveCurrentLayer(false);
+    }
+};
+
 template <>
 struct ActionProperties<Action::LAYER_DELETE> {
     static void callback(GSimpleAction*, GVariant*, Control* ctrl) { ctrl->getLayerController()->deleteCurrentLayer(); }

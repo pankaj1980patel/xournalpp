@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: xournalpp 1.2.3+dev\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-04-11 12:49+0000\n"
+"POT-Creation-Date: 2024-05-15 12:58+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -23,116 +23,132 @@ msgid ""
 "Please set the recording folder under \"Preferences > Audio recording\""
 msgstr ""
 
-#: ../src/core/control/Control.cpp:219
+#: ../src/core/control/Control.cpp:220
 msgid "Filesystem error: {1}"
 msgstr ""
 
-#: ../src/core/control/Control.cpp:231
+#: ../src/core/control/Control.cpp:232
 msgid "Could not remove old autosave file \"{1}\": {2}"
 msgstr ""
 
-#: ../src/core/control/Control.cpp:543
+#: ../src/core/control/Control.cpp:544
 msgid "You deleted the active toolbar. Falling back to the default toolbar."
 msgstr ""
 
-#: ../src/core/control/Control.cpp:563
+#: ../src/core/control/Control.cpp:564
 msgid ""
 "The Toolbarconfiguration \"{1}\" is predefined, would you create a copy to "
 "edit?"
 msgstr ""
 
-#: ../src/core/control/Control.cpp:566
+#: ../src/core/control/Control.cpp:567
 msgid "Yes"
 msgstr ""
 
-#: ../src/core/control/Control.cpp:566
+#: ../src/core/control/Control.cpp:567
 msgid "No"
 msgstr ""
 
-#: ../src/core/control/Control.cpp:744
+#: ../src/core/control/Control.cpp:789 ../src/core/control/Control.cpp:1616
+#: ../src/core/control/Control.cpp:2034 ../src/core/control/XournalMain.cpp:200
+msgid "Cancel"
+msgstr ""
+
+#: ../src/core/control/Control.cpp:790
+msgid "Insert after current page"
+msgstr ""
+
+#: ../src/core/control/Control.cpp:791
+msgid "Insert at end"
+msgstr ""
+
+#: ../src/core/control/Control.cpp:794
+msgid ""
+"Your current document does not contain PDF Page no {1}\n"
+"Would you like to insert this page?\n"
+"\n"
+"Tip: You can select Journal → Paper Background → PDF Background to insert a "
+"PDF page."
+msgstr ""
+
+#: ../src/core/control/Control.cpp:838
 msgid ""
 "No pdf pages available to append. You may need to reopen the document first."
 msgstr ""
 
-#: ../src/core/control/Control.cpp:758
+#: ../src/core/control/Control.cpp:852
 msgid "Unable to retrieve pdf page."
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1326
+#: ../src/core/control/Control.cpp:1419
 msgid ""
 "Do not open Autosave files. They may will be overwritten!\n"
 "Copy the files to another folder.\n"
 "Files from Folder {1} cannot be opened."
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1337
+#: ../src/core/control/Control.cpp:1430
 msgid "file: {1}"
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1366
+#: ../src/core/control/Control.cpp:1459
 msgid "Error opening file \"{1}\""
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1374
+#: ../src/core/control/Control.cpp:1467
 msgid ""
 "The file being loaded has a file format version newer than the one currently "
 "supported by this version of Xournal++, so it may not load properly. Open "
 "anyways?"
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1503
+#: ../src/core/control/Control.cpp:1596
 msgid ""
 "The attached background file could not be found. It might have been moved, "
 "renamed or deleted."
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1506
+#: ../src/core/control/Control.cpp:1599
 msgid ""
 "The background file \"{1}\" could not be found. It might have been moved, "
 "renamed or deleted.\n"
 "It was last seen at: \"{2}\""
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1516
+#: ../src/core/control/Control.cpp:1609
 msgid ""
 "\n"
 "Proposed replacement file: \"{1}\""
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1521
+#: ../src/core/control/Control.cpp:1614
 msgid "Select another PDF"
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1522
+#: ../src/core/control/Control.cpp:1615
 msgid "Remove PDF Background"
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1523 ../src/core/control/Control.cpp:1939
-#: ../src/core/control/XournalMain.cpp:200
-#: ../src/core/gui/sidebar/Sidebar.cpp:87
-msgid "Cancel"
-msgstr ""
-
-#: ../src/core/control/Control.cpp:1526
+#: ../src/core/control/Control.cpp:1619
 msgid "Use proposed PDF"
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1529
+#: ../src/core/control/Control.cpp:1622
 msgid "Missing PDF background file"
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1621
+#: ../src/core/control/Control.cpp:1716
 msgid ""
 "Error annotate PDF file \"{1}\"\n"
 "{2}"
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1725
+#: ../src/core/control/Control.cpp:1820
 #: ../src/core/gui/dialog/PageTemplateDialog.cpp:112
 msgid "Save File"
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1725
+#: ../src/core/control/Control.cpp:1820
 #: ../src/core/control/jobs/BaseExportJob.cpp:55
 #: ../src/core/control/stockdlg/ImageOpenDlg.cpp:16
 #: ../src/core/gui/dialog/PageTemplateDialog.cpp:112
@@ -140,47 +156,47 @@ msgstr ""
 msgid "_Cancel"
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1726
+#: ../src/core/control/Control.cpp:1821
 #: ../src/core/gui/dialog/PageTemplateDialog.cpp:113
 msgid "_Save"
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1729
+#: ../src/core/control/Control.cpp:1824
 #: ../src/core/gui/dialog/XojOpenDlg.cpp:46
 msgid "Xournal++ files"
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1774
+#: ../src/core/control/Control.cpp:1869
 msgid "Select font"
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1789
+#: ../src/core/control/Control.cpp:1884
 #: ../src/core/gui/toolbarMenubar/ColorSelectorToolItem.cpp:57
 msgid "Select color"
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1811
+#: ../src/core/control/Control.cpp:1906
 msgid "Unsaved Document"
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1930
+#: ../src/core/control/Control.cpp:2025
 msgid "Document file was removed."
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1930
+#: ../src/core/control/Control.cpp:2025
 msgid "This document is not saved yet."
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1931
+#: ../src/core/control/Control.cpp:2026
 msgid "Save As..."
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1931 ../src/core/control/jobs/SaveJob.cpp:24
+#: ../src/core/control/Control.cpp:2026 ../src/core/control/jobs/SaveJob.cpp:24
 #: ../src/core/gui/toolbarMenubar/ToolMenuHandler.cpp:283
 msgid "Save"
 msgstr ""
 
-#: ../src/core/control/Control.cpp:1936
+#: ../src/core/control/Control.cpp:2031
 msgid "Discard"
 msgstr ""
 
@@ -267,17 +283,13 @@ msgstr ""
 msgid "Could not load LaTeX PDF file"
 msgstr ""
 
-#: ../src/core/control/PageBackgroundChangeController.cpp:75
+#: ../src/core/control/PageBackgroundChangeController.cpp:94
 #: ../src/core/control/xojfile/LoadHandler.cpp:469
 #: ../src/core/control/xojfile/LoadHandler.cpp:485
 msgid "Error reading PDF: {1}"
 msgstr ""
 
-#: ../src/core/control/PageBackgroundChangeController.cpp:177
-msgid "This image could not be loaded. Error message: {1}"
-msgstr ""
-
-#: ../src/core/control/PageBackgroundChangeController.cpp:212
+#: ../src/core/control/PageBackgroundChangeController.cpp:216
 msgid ""
 "You don't have any PDF pages to select from. Cancel operation.\n"
 "Please select another background type: Menu \"Journal\" → \"Configure Page "
@@ -288,7 +300,7 @@ msgstr ""
 msgid "PDF background missing"
 msgstr ""
 
-#: ../src/core/control/PrintHandler.cpp:118
+#: ../src/core/control/PrintHandler.cpp:121
 msgid "Running print operation failed with {1}"
 msgstr ""
 
@@ -566,7 +578,7 @@ msgid "Xournal (Compatibility)"
 msgstr ""
 
 #: ../src/core/control/jobs/CustomExportJob.cpp:137
-#: ../src/core/control/jobs/SaveJob.cpp:130
+#: ../src/core/control/jobs/SaveJob.cpp:135
 msgid "Save file error: {1}"
 msgstr ""
 
@@ -583,7 +595,7 @@ msgid ""
 "Error while exporting the pdf background: I cannot find the pdf page number "
 msgstr ""
 
-#: ../src/core/control/jobs/ImageExport.cpp:197
+#: ../src/core/control/jobs/ImageExport.cpp:201
 msgid "Error save image #2"
 msgstr ""
 
@@ -591,7 +603,7 @@ msgstr ""
 msgid "PDF Export"
 msgstr ""
 
-#: ../src/core/control/jobs/SaveJob.cpp:116
+#: ../src/core/control/jobs/SaveJob.cpp:121
 msgid "Save file error, can't backup: {1}"
 msgstr ""
 
@@ -894,7 +906,7 @@ msgid "Unable to play audio recording {1}"
 msgstr ""
 
 #: ../src/core/gui/PageView.cpp:917
-#: ../src/core/gui/sidebar/previews/base/SidebarPreviewBaseEntry.cpp:96
+#: ../src/core/gui/sidebar/previews/base/SidebarPreviewBaseEntry.cpp:82
 #: ../src/core/gui/toolbarMenubar/ToolPageLayer.cpp:148
 msgid "Loading..."
 msgstr ""
@@ -1219,11 +1231,35 @@ msgstr ""
 msgid "Open file"
 msgstr ""
 
-#: ../src/core/gui/dialog/backgroundSelect/PdfPagesDialog.cpp:100
+#: ../src/core/gui/dialog/backgroundSelect/ImagesDialog.cpp:30
+msgid "Select Image"
+msgstr ""
+
+#: ../src/core/gui/dialog/backgroundSelect/ImagesDialog.cpp:33
+msgid "<b>... or select already used Image:</b>"
+msgstr ""
+
+#: ../src/core/gui/dialog/backgroundSelect/ImagesDialog.cpp:37
+msgid "Load file"
+msgstr ""
+
+#: ../src/core/gui/dialog/backgroundSelect/ImagesDialog.cpp:115
+msgid "This image could not be loaded. Error message: {1}"
+msgstr ""
+
+#: ../src/core/gui/dialog/backgroundSelect/ImagesDialog.cpp:121
+msgid "This image could not be loaded."
+msgstr ""
+
+#: ../src/core/gui/dialog/backgroundSelect/PdfPagesDialog.cpp:28
+msgid "Select PDF Page"
+msgstr ""
+
+#: ../src/core/gui/dialog/backgroundSelect/PdfPagesDialog.cpp:56
 msgid "Show only not used pages (one unused page)"
 msgstr ""
 
-#: ../src/core/gui/dialog/backgroundSelect/PdfPagesDialog.cpp:101
+#: ../src/core/gui/dialog/backgroundSelect/PdfPagesDialog.cpp:57
 msgid "Show only not used pages ({1} unused pages)"
 msgstr ""
 
@@ -1329,68 +1365,19 @@ msgstr ""
 msgid "Apply to current page"
 msgstr ""
 
-#: ../src/core/gui/sidebar/Sidebar.cpp:88
-msgid "Insert after current page"
-msgstr ""
-
-#: ../src/core/gui/sidebar/Sidebar.cpp:89
-msgid "Insert at end"
-msgstr ""
-
-#: ../src/core/gui/sidebar/Sidebar.cpp:92
-msgid ""
-"Your current document does not contain PDF Page no {1}\n"
-"Would you like to insert this page?\n"
-"\n"
-"Tip: You can select Journal → Paper Background → PDF Background to insert a "
-"PDF page."
-msgstr ""
-
-#: ../src/core/gui/sidebar/indextree/SidebarIndexPage.cpp:173
+#: ../src/core/gui/sidebar/indextree/SidebarIndexPage.cpp:172
 msgid "Contents"
 msgstr ""
 
-#: ../src/core/gui/sidebar/previews/layer/SidebarPreviewLayers.cpp:72
-msgid "Swap the current layer with the one above"
-msgstr ""
-
-#: ../src/core/gui/sidebar/previews/layer/SidebarPreviewLayers.cpp:73
-msgid "Swap the current layer with the one below"
-msgstr ""
-
-#: ../src/core/gui/sidebar/previews/layer/SidebarPreviewLayers.cpp:74
-msgid "Insert a copy of the current layer below"
-msgstr ""
-
-#: ../src/core/gui/sidebar/previews/layer/SidebarPreviewLayers.cpp:74
-msgid "Delete this layer"
-msgstr ""
-
-#: ../src/core/gui/sidebar/previews/layer/SidebarPreviewLayers.cpp:78
+#: ../src/core/gui/sidebar/previews/layer/SidebarPreviewLayers.cpp:37
 msgid "Layerstack Preview"
 msgstr ""
 
-#: ../src/core/gui/sidebar/previews/layer/SidebarPreviewLayers.cpp:78
+#: ../src/core/gui/sidebar/previews/layer/SidebarPreviewLayers.cpp:37
 msgid "Layer Preview"
 msgstr ""
 
-#: ../src/core/gui/sidebar/previews/page/SidebarPreviewPages.cpp:80
-msgid "Swap the current page with the one above"
-msgstr ""
-
-#: ../src/core/gui/sidebar/previews/page/SidebarPreviewPages.cpp:81
-msgid "Swap the current page with the one below"
-msgstr ""
-
-#: ../src/core/gui/sidebar/previews/page/SidebarPreviewPages.cpp:82
-msgid "Insert a copy of the current page below"
-msgstr ""
-
-#: ../src/core/gui/sidebar/previews/page/SidebarPreviewPages.cpp:82
-msgid "Delete this page"
-msgstr ""
-
-#: ../src/core/gui/sidebar/previews/page/SidebarPreviewPages.cpp:86
+#: ../src/core/gui/sidebar/previews/page/SidebarPreviewPages.cpp:36
 msgid "Page Preview"
 msgstr ""
 
@@ -1813,13 +1800,13 @@ msgstr ""
 msgid "Error while finalizing the PDF Cairo surface"
 msgstr ""
 
-#: ../src/core/pdf/base/XojCairoPdfExport.cpp:189
-#: ../src/core/pdf/base/XojCairoPdfExport.cpp:235
+#: ../src/core/pdf/base/XojCairoPdfExport.cpp:193
+#: ../src/core/pdf/base/XojCairoPdfExport.cpp:239
 msgid "No pages to export!"
 msgstr ""
 
-#: ../src/core/pdf/base/XojCairoPdfExport.cpp:198
-#: ../src/core/pdf/base/XojCairoPdfExport.cpp:240
+#: ../src/core/pdf/base/XojCairoPdfExport.cpp:202
+#: ../src/core/pdf/base/XojCairoPdfExport.cpp:244
 msgid "Failed to initialize PDF Cairo surface"
 msgstr ""
 
@@ -1870,11 +1857,11 @@ msgstr ""
 msgid "Change font"
 msgstr ""
 
-#: ../src/core/undo/InsertDeletePageUndoAction.cpp:86
+#: ../src/core/undo/InsertDeletePageUndoAction.cpp:83
 msgid "Page inserted"
 msgstr ""
 
-#: ../src/core/undo/InsertDeletePageUndoAction.cpp:90
+#: ../src/core/undo/InsertDeletePageUndoAction.cpp:87
 msgid "Page deleted"
 msgstr ""
 
@@ -2121,6 +2108,14 @@ msgstr ""
 msgid "Close"
 msgstr ""
 
+#: ../ui/backgroundSelection.glade:49 ../ui/exportSettings.glade:425
+#: ../ui/goto.glade:108 ../ui/pageFormat.glade:346 ../ui/pageTemplate.glade:278
+#: ../ui/plugin.glade:113 ../ui/renameLayerDialog.glade:71
+#: ../ui/selectOpacity.glade:134 ../ui/settings.glade:6264
+#: ../ui/texdialog.glade:203
+msgid "Ok"
+msgstr ""
+
 #: ../ui/exportSettings.glade:36
 msgid "Resolution"
 msgstr ""
@@ -2197,28 +2192,8 @@ msgid ""
 "PDF file can be used for a presentation."
 msgstr ""
 
-#: ../ui/exportSettings.glade:425 ../ui/goto.glade:108
-#: ../ui/pageFormat.glade:346 ../ui/pageTemplate.glade:278
-#: ../ui/plugin.glade:113 ../ui/renameLayerDialog.glade:71
-#: ../ui/selectOpacity.glade:134 ../ui/settings.glade:6264
-#: ../ui/texdialog.glade:203
-msgid "Ok"
-msgstr ""
-
 #: ../ui/goto.glade:23
 msgid "Go to Page"
-msgstr ""
-
-#: ../ui/images.glade:8
-msgid "Select Image"
-msgstr ""
-
-#: ../ui/images.glade:73
-msgid "Load file"
-msgstr ""
-
-#: ../ui/images.glade:88
-msgid "<b>... or select already used Image:</b>"
 msgstr ""
 
 #: ../ui/latexSettings.glade:36
@@ -2337,60 +2312,32 @@ msgid ""
 "            <i>Menu: View/Toolbars</i>"
 msgstr ""
 
-#: ../ui/main.glade:505
+#: ../ui/main.glade:421
 msgid "Find previous occurrence of the search string"
 msgstr ""
 
-#: ../ui/main.glade:527
+#: ../ui/main.glade:443
 msgid "Find next occurrence of the search string"
 msgstr ""
 
-#: ../ui/main.glade:729
+#: ../ui/main.glade:645
 msgid "Copy selected text"
 msgstr ""
 
-#: ../ui/main.glade:751
+#: ../ui/main.glade:667
 msgid "Highlight selected text"
 msgstr ""
 
-#: ../ui/main.glade:771
+#: ../ui/main.glade:687
 msgid "Underline selected text"
 msgstr ""
 
-#: ../ui/main.glade:791
+#: ../ui/main.glade:707
 msgid "Strikethrough selected text"
 msgstr ""
 
-#: ../ui/main.glade:811
+#: ../ui/main.glade:727
 msgid "Toggle standard / region text selection"
-msgstr ""
-
-#: ../ui/main.glade:839
-msgid "Insert Page Before"
-msgstr ""
-
-#: ../ui/main.glade:847
-msgid "Insert Page After"
-msgstr ""
-
-#: ../ui/main.glade:855 ../ui/main.glade:943
-msgid "Duplicate"
-msgstr ""
-
-#: ../ui/main.glade:869 ../ui/main.glade:919
-msgid "Move Up"
-msgstr ""
-
-#: ../ui/main.glade:877 ../ui/main.glade:927
-msgid "Move Down"
-msgstr ""
-
-#: ../ui/main.glade:892
-msgid "Edit (not implemented yet)"
-msgstr ""
-
-#: ../ui/main.glade:935
-msgid "Merge Down"
 msgstr ""
 
 #: ../ui/pageFormat.glade:28
@@ -2469,10 +2416,6 @@ msgstr ""
 
 #: ../ui/pageTemplate.glade:247
 msgid "Load from file"
-msgstr ""
-
-#: ../ui/pdfpages.glade:8
-msgid "Select PDF Page"
 msgstr ""
 
 #: ../ui/plugin.glade:22
@@ -3309,7 +3252,7 @@ msgid "Selection Edge Panning"
 msgstr ""
 
 #: ../ui/settings.glade:3841 ../ui/settings.glade:3915
-#: ../ui/mainmenubar.xml:205
+#: ../ui/mainmenubar.xml:206
 msgid "Show Menubar"
 msgstr ""
 
@@ -3318,11 +3261,11 @@ msgid "Show Toolbar"
 msgstr ""
 
 #: ../ui/settings.glade:3871 ../ui/settings.glade:3960
-#: ../ui/mainmenubar.xml:210
+#: ../ui/mainmenubar.xml:211
 msgid "Show Sidebar"
 msgstr ""
 
-#: ../ui/settings.glade:3890 ../ui/mainmenubar.xml:193
+#: ../ui/settings.glade:3890 ../ui/mainmenubar.xml:194
 msgid "Fullscreen"
 msgstr ""
 
@@ -3901,404 +3844,404 @@ msgstr ""
 msgid "Preferences"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:166
+#: ../ui/mainmenubar.xml:167
 msgid "T_oolbars"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:169
+#: ../ui/mainmenubar.xml:170
 msgid "_Manage"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:173
+#: ../ui/mainmenubar.xml:174
 msgid "_Customize"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:181
+#: ../ui/mainmenubar.xml:182
 msgid "_View"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:184
+#: ../ui/mainmenubar.xml:185
 msgid "_Pair Pages"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:188
+#: ../ui/mainmenubar.xml:189
 msgid "_Presentation Mode"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:200
+#: ../ui/mainmenubar.xml:201
 msgid "Show Toolbars"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:217
+#: ../ui/mainmenubar.xml:218
 msgid "Layout"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:220
+#: ../ui/mainmenubar.xml:221
 msgid "_Horizontal"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:225
+#: ../ui/mainmenubar.xml:226
 msgid "_Vertical"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:232
+#: ../ui/mainmenubar.xml:233
 msgid "_Left to Right"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:237
+#: ../ui/mainmenubar.xml:238
 msgid "_Right to Left"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:244
+#: ../ui/mainmenubar.xml:245
 msgid "_Top to Bottom"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:249
+#: ../ui/mainmenubar.xml:250
 msgid "_Bottom to Top"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:256
+#: ../ui/mainmenubar.xml:257
 msgid "_Cols/Rows"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:259
+#: ../ui/mainmenubar.xml:260
 msgid "Set Columns"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:263
+#: ../ui/mainmenubar.xml:264
 msgid "_1 Column"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:268
+#: ../ui/mainmenubar.xml:269
 msgid "_2 Columns"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:273
+#: ../ui/mainmenubar.xml:274
 msgid "_3 Columns"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:278
+#: ../ui/mainmenubar.xml:279
 msgid "_4 Columns"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:283
+#: ../ui/mainmenubar.xml:284
 msgid "_5 Columns"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:288
+#: ../ui/mainmenubar.xml:289
 msgid "_6 Columns"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:293
+#: ../ui/mainmenubar.xml:294
 msgid "_7 Columns"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:298
+#: ../ui/mainmenubar.xml:299
 msgid "_8 Columns"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:305
+#: ../ui/mainmenubar.xml:306
 msgid "Set Rows"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:309
+#: ../ui/mainmenubar.xml:310
 msgid "_1 Row"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:314
+#: ../ui/mainmenubar.xml:315
 msgid "_2 Rows"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:319
+#: ../ui/mainmenubar.xml:320
 msgid "_3 Rows"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:324
+#: ../ui/mainmenubar.xml:325
 msgid "_4 Rows"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:329
+#: ../ui/mainmenubar.xml:330
 msgid "_5 Rows"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:334
+#: ../ui/mainmenubar.xml:335
 msgid "_6 Rows"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:339
+#: ../ui/mainmenubar.xml:340
 msgid "_7 Rows"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:344
+#: ../ui/mainmenubar.xml:345
 msgid "_8 Rows"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:355
+#: ../ui/mainmenubar.xml:356
 msgid "Zoom In"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:360
+#: ../ui/mainmenubar.xml:361
 msgid "Zoom Out"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:365
+#: ../ui/mainmenubar.xml:366
 msgid "Normal Size"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:369
+#: ../ui/mainmenubar.xml:370
 msgid "Zoom to Fit"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:375
+#: ../ui/mainmenubar.xml:376
 msgid "_Navigation"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:378
+#: ../ui/mainmenubar.xml:379
 msgid "_First Page"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:383
+#: ../ui/mainmenubar.xml:384
 msgid "_Previous Page"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:388
+#: ../ui/mainmenubar.xml:389
 msgid "_Goto Page"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:393
+#: ../ui/mainmenubar.xml:394
 msgid "_Next Page"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:398
+#: ../ui/mainmenubar.xml:399
 msgid "_Last Page"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:405
+#: ../ui/mainmenubar.xml:406
 msgid "_Previous Layer"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:410
+#: ../ui/mainmenubar.xml:411
 msgid "_Next Layer"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:415
+#: ../ui/mainmenubar.xml:416
 msgid "_Top Layer"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:421
+#: ../ui/mainmenubar.xml:422
 msgid "N_ext Annotated Page"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:426
+#: ../ui/mainmenubar.xml:427
 msgid "P_revious Annotated Page"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:433
+#: ../ui/mainmenubar.xml:434
 msgid "_Journal"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:436
+#: ../ui/mainmenubar.xml:437
 msgid "New Page _Before"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:440
+#: ../ui/mainmenubar.xml:441
 msgid "New Page _After"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:445
+#: ../ui/mainmenubar.xml:446
 msgid "New Page at _End"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:449
+#: ../ui/mainmenubar.xml:450
 msgid "Duplicate Page"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:453
+#: ../ui/mainmenubar.xml:454
 msgid "Append New PDF Pages"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:457
+#: ../ui/mainmenubar.xml:458
 msgid "Configure Page Template"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:461
+#: ../ui/mainmenubar.xml:462
 msgid "_Delete Page"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:468
+#: ../ui/mainmenubar.xml:469
 msgid "New _Layer"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:473
+#: ../ui/mainmenubar.xml:474
 msgid "Delete Layer"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:478
+#: ../ui/mainmenubar.xml:479
 msgid "Merge Layer Down"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:483
+#: ../ui/mainmenubar.xml:484
 msgid "Rename Layer"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:490
+#: ../ui/mainmenubar.xml:491
 msgid "Paper _Format"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:494
+#: ../ui/mainmenubar.xml:495
 msgid "Paper _Color"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:498
+#: ../ui/mainmenubar.xml:499
 msgid "Paper B_ackground"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:503
+#: ../ui/mainmenubar.xml:504
 msgid "_Tools"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:506
+#: ../ui/mainmenubar.xml:507
 msgid "_Pen"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:512
+#: ../ui/mainmenubar.xml:513
 msgid "_Eraser"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:518
+#: ../ui/mainmenubar.xml:519
 msgid "Select Linear Text"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:524
+#: ../ui/mainmenubar.xml:525
 msgid "Select Text In Rectangle"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:530
+#: ../ui/mainmenubar.xml:531
 msgid "_Highlighter"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:536
+#: ../ui/mainmenubar.xml:537
 msgid "_Text"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:542
+#: ../ui/mainmenubar.xml:543
 msgid "_Image"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:548
+#: ../ui/mainmenubar.xml:549
 msgid "_Default Tool"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:555
+#: ../ui/mainmenubar.xml:556
 msgid "Drawing Type"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:557
+#: ../ui/mainmenubar.xml:558
 msgid "_Shape Recognizer"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:582
+#: ../ui/mainmenubar.xml:583
 msgid "Draw Coordinate System"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:587
+#: ../ui/mainmenubar.xml:588
 msgid "Draw _Line"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:628
+#: ../ui/mainmenubar.xml:629
 msgid "_Vertical Space"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:640
+#: ../ui/mainmenubar.xml:641
 msgid "H_and Tool"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:656
+#: ../ui/mainmenubar.xml:657
 msgid "Pen _Options"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:659 ../ui/mainmenubar.xml:721
-#: ../ui/mainmenubar.xml:768
+#: ../ui/mainmenubar.xml:660 ../ui/mainmenubar.xml:722
+#: ../ui/mainmenubar.xml:769
 msgid "_very fine"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:664 ../ui/mainmenubar.xml:726
-#: ../ui/mainmenubar.xml:773
+#: ../ui/mainmenubar.xml:665 ../ui/mainmenubar.xml:727
+#: ../ui/mainmenubar.xml:774
 msgid "_fine"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:669 ../ui/mainmenubar.xml:731
-#: ../ui/mainmenubar.xml:778
+#: ../ui/mainmenubar.xml:670 ../ui/mainmenubar.xml:732
+#: ../ui/mainmenubar.xml:779
 msgid "_medium"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:674 ../ui/mainmenubar.xml:736
-#: ../ui/mainmenubar.xml:783
+#: ../ui/mainmenubar.xml:675 ../ui/mainmenubar.xml:737
+#: ../ui/mainmenubar.xml:784
 msgid "_thick"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:679 ../ui/mainmenubar.xml:741
-#: ../ui/mainmenubar.xml:788
+#: ../ui/mainmenubar.xml:680 ../ui/mainmenubar.xml:742
+#: ../ui/mainmenubar.xml:789
 msgid "ver_y thick"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:708 ../ui/mainmenubar.xml:795
+#: ../ui/mainmenubar.xml:709 ../ui/mainmenubar.xml:796
 msgid "Fi_ll"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:712 ../ui/mainmenubar.xml:799
+#: ../ui/mainmenubar.xml:713 ../ui/mainmenubar.xml:800
 msgid "Fill opacity"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:718
+#: ../ui/mainmenubar.xml:719
 msgid "Eraser Optio_ns"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:748
+#: ../ui/mainmenubar.xml:749
 msgid "_standard"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:753
+#: ../ui/mainmenubar.xml:754
 msgid "_whiteout"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:758
+#: ../ui/mainmenubar.xml:759
 msgid "_delete strokes"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:765
+#: ../ui/mainmenubar.xml:766
 msgid "Highlighter Opti_ons"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:805
+#: ../ui/mainmenubar.xml:806
 msgid "Select PDF Text Options"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:808
+#: ../ui/mainmenubar.xml:809
 msgid "Marker Opacity"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:814
+#: ../ui/mainmenubar.xml:815
 msgid "Text Font..."
 msgstr ""
 
-#: ../ui/mainmenubar.xml:819
+#: ../ui/mainmenubar.xml:820
 msgid "Record / Stop"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:824
+#: ../ui/mainmenubar.xml:825
 msgid "Pause"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:851
+#: ../ui/mainmenubar.xml:852
 msgid "_Help"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:855
+#: ../ui/mainmenubar.xml:856
 msgid "Help"
 msgstr ""
 
-#: ../ui/mainmenubar.xml:859
+#: ../ui/mainmenubar.xml:860
 msgid "About"
 msgstr ""
 

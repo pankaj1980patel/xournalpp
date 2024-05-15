@@ -20,6 +20,11 @@ void gtk_box_append(GtkBox* box, GtkWidget* child) {
     gtk_box_pack_start(GTK_BOX(box), child, default_expand, true, 0);
 }
 
+void gtk_box_prepend(GtkBox* box, GtkWidget* child) {
+    gtk_box_append(box, child);
+    gtk_box_reorder_child(box, child, 0);
+}
+
 void gtk_box_remove(GtkBox* box, GtkWidget* child) { gtk_container_remove(GTK_CONTAINER(box), child); }
 
 /**** GtkWindow ****/
@@ -157,7 +162,13 @@ gboolean gtk_file_chooser_set_current_folder(GtkFileChooser* chooser, GFile* fil
     return gtk_file_chooser_set_current_folder_file(chooser, file, error);
 }
 
+/**** GtkFixed ****/
+void gtk_fixed_remove(GtkFixed* fixed, GtkWidget* child) { gtk_container_remove(GTK_CONTAINER(fixed), child); }
+
 /**** GtkListBox ****/
 void gtk_list_box_append(GtkListBox* box, GtkWidget* widget) { gtk_container_add(GTK_CONTAINER(box), widget); }
 void gtk_list_box_row_set_child(GtkListBoxRow* row, GtkWidget* w) { set_child(GTK_CONTAINER(row), w); }
 GtkWidget* gtk_list_box_row_get_child(GtkListBoxRow* row) { return gtk_bin_get_child(GTK_BIN(row)); }
+
+/**** GtkEventController ****/
+GdkEvent* gtk_event_controller_get_current_event(GtkEventController*) { return gtk_get_current_event(); }

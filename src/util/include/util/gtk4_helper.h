@@ -17,6 +17,7 @@
 /**** GtkBox ****/
 
 void gtk_box_append(GtkBox* box, GtkWidget* child);
+void gtk_box_prepend(GtkBox* box, GtkWidget* child);
 void gtk_box_remove(GtkBox* box, GtkWidget* child);
 
 /**** GtkWindow ****/
@@ -82,7 +83,13 @@ void gtk_im_context_set_client_widget(GtkIMContext* context, GtkWidget* widget);
 gboolean gtk_file_chooser_add_shortcut_folder(GtkFileChooser* chooser, GFile* file, GError** error);
 gboolean gtk_file_chooser_set_current_folder(GtkFileChooser* chooser, GFile* file, GError** error);
 
+/**** GtkFixed ****/
+void gtk_fixed_remove(GtkFixed* fixed, GtkWidget* child);
+
 /**** GtkListBox ****/
 void gtk_list_box_append(GtkListBox* box, GtkWidget* widget);
 void gtk_list_box_row_set_child(GtkListBoxRow* row, GtkWidget* w);
 GtkWidget* gtk_list_box_row_get_child(GtkListBoxRow* row);
+
+/**** GtkEventController ****/
+GdkEvent* gtk_event_controller_get_current_event(GtkEventController*);
