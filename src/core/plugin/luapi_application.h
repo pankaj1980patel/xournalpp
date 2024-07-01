@@ -33,12 +33,16 @@
 #include "gui/Layout.h"
 #include "gui/MainWindow.h"
 #include "gui/XournalView.h"
+#include "gui/dialog/FileChooserFiltersHelper.h"
+#include "gui/dialog/XojOpenDlg.h"  // for XojO...
+#include "gui/dialog/XojSaveDlg.h"  // for XojS...
 #include "gui/sidebar/Sidebar.h"
 #include "gui/toolbarMenubar/model/ColorPalette.h"  // for Palette
 #include "gui/widgets/XournalWidget.h"
 #include "model/Document.h"
 #include "model/Element.h"
 #include "model/Font.h"
+#include "model/Image.h"
 #include "model/SplineSegment.h"
 #include "model/Stroke.h"
 #include "model/StrokeStyle.h"
@@ -46,6 +50,7 @@
 #include "model/XojPage.h"  // IWYU pragma: keep for XojPage
 #include "plugin/Plugin.h"
 #include "undo/InsertUndoAction.h"
+#include "util/PopupWindowWrapper.h"  // for PopupWindowWrapper
 #include "util/StringUtils.h"
 #include "util/i18n.h"        // for _
 #include "util/safe_casts.h"  // for round_cast, as_signed, as_unsigned
@@ -133,10 +138,13 @@ static int applib_glib_rename(lua_State* L) {
 
 
 /**
+ * THIS FUNCTION IS DEPRECATED AND WILL BE REMOVED SOON. Use applib_fileDialogSave() instead.
+ *
+ * @deprecated
  * Create a 'Save As' native dialog and return as a string
  * the filepath of the location the user chose to save.
  *
- * @param filename string suggestion for a filename, defaults to "untitlted"
+ * @param filename string suggestion for a filename, defaults to "Untitled"
  * @return string path of the selected location
  *
  * Examples:
@@ -176,6 +184,61 @@ static int applib_saveAs(lua_State* L) {
 }
 
 /**
+ * Create a 'Save As' dialog and once the user has chosen the filepath of the location to save
+ * calls the specified callback function to which it passes the filepath or the empty string, if the
+ * operation was cancelled.
+ *
+ * @param cb string name of the callback function(path:string) to call when a file has been chosen
+ * @param filename string suggestion for a filename, defaults to "Untitled"
+ *
+ * Examples:
+ *   app.fileDialogSave("cb") -- defaults to suggestion "Untitled" in current working directory
+ *   app.fileDialogSave("cb", "foo") -- suggests "foo" as filename in current working directory
+ *   app.fileDialogSave("cb", "/path/to/folder/bar.png") -- suggestes the given absolute path
+ */
+static int applib_fileDialogSave(lua_State* L) {
+
+    lua_settop(L, 2);  // discard extra arguments
+    const char* luaCallback = luaL_checkstring(L, 1);
+    const char* filename = luaL_optstring(L, 2, _("Untitled"));
+    if (auto s = std::string(filename);
+        s.find("/") == std::string::npos &&
+        s.find("\\") == std::string::npos) {  // relative path (contains no slashes and backslashes)
+        filename = ("./" + s).c_str();
+    }
+    fs::path suggestedPath{filename};
+
+
+    auto pathValidation = [](fs::path& p, const char* filterName) { return true; };
+
+    Plugin* plugin = Plugin::getPluginFromLua(L);
+    Control* ctrl = plugin->getControl();
+
+    auto callback = [plugin, luaCallback = std::string(luaCallback)](std::optional<fs::path> p) {
+        if (p && !p->empty()) {
+            plugin->callFunction(luaCallback, p.value().string().c_str());
+        } else {
+            plugin->callFunction(luaCallback, "");
+        }
+    };
+
+    auto popup = xoj::popup::PopupWindowWrapper<xoj::SaveExportDialog>(ctrl->getSettings(), std::move(suggestedPath),
+                                                                       _("Save File"), _("Save"),
+                                                                       std::move(pathValidation), std::move(callback));
+
+    auto* fc = GTK_FILE_CHOOSER(popup.getPopup()->getWindow());
+    xoj::addFilterAllFiles(fc);
+
+    popup.show(GTK_WINDOW(ctrl->getWindow()->getWindow()));
+
+    return 0;
+}
+
+
+/**
+ * THIS FUNCTION IS DEPRECATED AND WILL BE REMOVED SOON. Use applib_fileDialogOpen() instead.
+ *
+ * @deprecated
  * Create a 'Open File' native dialog and return as a string
  * the filepath the user chose to open.
  *
@@ -183,7 +246,7 @@ static int applib_saveAs(lua_State* L) {
  * @returns string path of the selected location
  *
  * Examples:
- *   path = app.getFilePath()
+ *   path = app.getFilePath({})
  *   path = app.getFilePath({'*.bmp', '*.png'})
  */
 static int applib_getFilePath(lua_State* L) {
@@ -229,6 +292,49 @@ static int applib_getFilePath(lua_State* L) {
     // Destroy the dialog and free memory
     return args_returned;
 }
+
+/**
+ * Create an 'Open File' dialog and when the user has chosen a filepath
+ * call a callback function whose sole argument is the filepath.
+ *
+ * @param cb string name of the callback function(path:string) to call when a file was chosen
+ * @param types string[] array of the different allowed extensions e.g. {'\*.bmp', '\*.png'}
+ *
+ * Examples:
+ *   app.fileDialogOpen("cb", {})
+ *   app.fileDialogOpen("cb", {'*.bmp', '*.png'})
+ */
+static int applib_fileDialogOpen(lua_State* L) {
+
+    // discard any extra arguments passed in
+    lua_settop(L, 2);
+    const char* callback = luaL_checkstring(L, 1);
+
+    // Get vector of supported formats from Lua stack
+    std::vector<std::string> formats;
+    // stack now contains: -1 => table
+    lua_pushnil(L);
+    // stack now contains: -1 => nil; 2 => table, 1 => string
+    while (lua_next(L, 2)) {
+        // stack now contains: -1 => value; -2 => key; 2 => table, 1 => string
+        const char* value = lua_tostring(L, -1);
+        formats.push_back(value);
+        lua_pop(L, 1);
+        // stack now contains: -1 => key; 2 => table, 1 => string
+    }
+    lua_pop(L, 1);  // Stack is now the same as it was on entry to this function
+
+    Plugin* plugin = Plugin::getPluginFromLua(L);
+    Control* ctrl = plugin->getControl();
+
+    xoj::OpenDlg::showMultiFormatDialog(ctrl->getGtkWindow(), formats,
+                                        [plugin, callback = std::string(callback)](fs::path path) {
+                                            g_message("%s", (_F("file: {1}") % path.string()).c_str());
+                                            plugin->callFunction(callback, path.string().c_str());
+                                        });
+    return 0;
+}
+
 
 /**
  * THIS FUNCTION IS DEPRECATED AND WILL BE REMOVED SOON. Use applib_openDialog() instead.
@@ -2508,8 +2614,9 @@ static int applib_openFile(lua_State* L) {
         forceOpen = lua_toboolean(L, 3);
     }
 
-    const bool success = control->openFile(fs::path(filename), scrollToPage - 1, forceOpen);
-    lua_pushboolean(L, success);
+    control->openFile(
+            fs::path(filename), [](bool) {}, scrollToPage - 1, forceOpen);
+    lua_pushboolean(L, true);  // Todo replace with callback
     return 1;
 }
 
@@ -2637,19 +2744,15 @@ static int applib_addImages(lua_State* L) {
         }
 
         std::unique_ptr<Image> img;
-        int width;
-        int height;
-        XojPageView* pv = control->getWindow()->getXournal()->getViewFor(control->getCurrentPageNo());
-        ImageHandler imgHandler(control, pv);
         if (path) {
-            xoj::util::GObjectSPtr<GFile> file(g_file_new_for_path(path), xoj::util::adopt);
-            if (!g_file_query_exists(file.get(), NULL)) {
+            fs::path p(path);
+            if (p.empty() || !fs::exists(p)) {
                 lua_pop(L, 8);  // pop the params we fetched from the global param-table from the stack
                 lua_pushfstring(L, "Error: file '%s' does not exist.", path);  // soft error
                 continue;
             }
 
-            std::tie(img, width, height) = imgHandler.createImageFromFile(file.get(), x, y);
+            img = ImageHandler::createImageFromFile(p);
             if (!img) {
                 lua_pop(L, 8);  // pop the params we fetched from the global param-table from the stack
                 lua_pushfstring(L, "Error: creating the image (%s) failed.", path);  // soft error
@@ -2659,10 +2762,11 @@ static int applib_addImages(lua_State* L) {
             img = std::make_unique<Image>();
             img->setImage(std::string(data, dataLen));
             img->getImage();  // render image first to get the proper width and height
-            std::tie(width, height) = img->getImageSize();
-            img->setX(x);
-            img->setY(y);
         }
+
+        auto [width, height] = img->getImageSize();
+        img->setX(x);
+        img->setY(y);
 
         // apply width/height parameter
         if (maxWidthParam != -1 && maxHeightParam != -1) {
@@ -2696,17 +2800,19 @@ static int applib_addImages(lua_State* L) {
         width = round_cast<int>(width * scale);
         height = round_cast<int>(height * scale);
 
+        PageRef page = control->getCurrentPage();
+
         // scale down keeping the current aspect ratio after the manual scaling to fit the image on the page
         // if the image already fits on the screen, no other scaling is applied here
         // already sets width/height in the image
-        imgHandler.automaticScaling(img.get(), x, y, width, height);
+        ImageHandler::automaticScaling(*img, page);
 
         // store the image to later build the undo/redo action chain
         images.push_back(img.get());
 
         lua_pop(L, 8);  // pop the params we fetched from the global param-table from the stack
 
-        bool succ = imgHandler.addImageToDocument(std::move(img), false);
+        bool succ = ImageHandler::addImageToDocument(std::move(img), page, control, false);
         if (!succ) {
             lua_pushfstring(L, "Error: Inserting the image (%s) failed.", path);  // soft error
         }
@@ -2821,7 +2927,8 @@ static int applib_getImages(lua_State* L) {
 static const luaL_Reg applib[] = {{"msgbox", applib_msgbox},  // Todo(gtk4) remove this deprecated function
                                   {"openDialog", applib_openDialog},
                                   {"glib_rename", applib_glib_rename},
-                                  {"saveAs", applib_saveAs},
+                                  {"saveAs", applib_saveAs},  // Todo(gtk4) remove this deprecated function
+                                  {"fileDialogSave", applib_fileDialogSave},
                                   {"registerUi", applib_registerUi},
                                   {"uiAction", applib_uiAction},
                                   {"sidebarAction", applib_sidebarAction},
@@ -2849,7 +2956,8 @@ static const luaL_Reg applib[] = {{"msgbox", applib_msgbox},  // Todo(gtk4) remo
                                   {"addSplines", applib_addSplines},
                                   {"addImages", applib_addImages},
                                   {"addTexts", applib_addTexts},
-                                  {"getFilePath", applib_getFilePath},
+                                  {"getFilePath", applib_getFilePath},  // Todo(gtk4) remove this deprecated function
+                                  {"fileDialogOpen", applib_fileDialogOpen},
                                   {"refreshPage", applib_refreshPage},
                                   {"getStrokes", applib_getStrokes},
                                   {"getImages", applib_getImages},

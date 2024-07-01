@@ -19,9 +19,14 @@
 
 class Settings;
 
-namespace XojOpenDlg {
+namespace xoj::OpenDlg {
 void showOpenFileDialog(GtkWindow* parent, Settings* settings, std::function<void(fs::path)> callback);
 /// @param callback(path, attachPdf)
 void showAnnotatePdfDialog(GtkWindow* parent, Settings* settings, std::function<void(fs::path, bool)> callback);
 void showOpenTemplateDialog(GtkWindow* parent, Settings* settings, std::function<void(fs::path)> callback);
-};  // namespace XojOpenDlg
+
+/// @param callback(path, attachImg)
+void showOpenImageDialog(GtkWindow* parent, Settings* settings, std::function<void(fs::path, bool)> callback);
+
+void showMultiFormatDialog(GtkWindow* parent, std::vector<std::string> formats, std::function<void(fs::path)> callback);
+};  // namespace xoj::OpenDlg
