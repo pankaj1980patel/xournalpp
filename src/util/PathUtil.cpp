@@ -1,5 +1,6 @@
 #include "util/PathUtil.h"
 
+#include <algorithm>
 #include <cstdlib>      // for system
 #include <fstream>      // for ifstream, char_traits, basic_ist...
 #include <iterator>     // for begin
@@ -179,20 +180,22 @@ void Util::openFileWithDefaultApplication(const fs::path& filename) {
     }
 }
 
-auto Util::getGettextFilepath(const char* localeDir) -> fs::path {
+auto Util::getGettextFilepath(fs::path const& localeDir) -> fs::path {
+    /// documentation of g_getenv is wrong, its UTF-8, see #5640
     const char* gettextEnv = g_getenv("TEXTDOMAINDIR");
     // Only consider first path in environment variable
-    std::string directories;
+    std::string_view directories;
     if (gettextEnv) {
-        directories = std::string(gettextEnv);
+        directories = gettextEnv;
         size_t firstDot = directories.find(G_SEARCHPATH_SEPARATOR);
         if (firstDot != std::string::npos) {
             directories = directories.substr(0, firstDot);
         }
     }
-    const char* dir = (gettextEnv) ? directories.c_str() : localeDir;
-    g_debug("TEXTDOMAINDIR = %s, Platform-specific locale dir = %s, chosen directory = %s", gettextEnv, localeDir, dir);
-    return fs::path(dir);
+    auto dir = (gettextEnv) ? fs::u8path(directories) : localeDir;
+    g_debug("TEXTDOMAINDIR = %s, Platform-specific locale dir = %s, chosen directory = %s", gettextEnv,
+            localeDir.string().c_str(), dir.string().c_str());
+    return dir;
 }
 
 auto Util::getAutosaveFilepath() -> fs::path {
@@ -223,6 +226,43 @@ auto Util::getCacheSubfolder(const fs::path& subfolder) -> fs::path {
 
 auto Util::getDataSubfolder(const fs::path& subfolder) -> fs::path {
     auto p = fs::u8path(g_get_user_data_dir());
+    p /= CONFIG_FOLDER_NAME;
+    p /= subfolder;
+
+    return Util::ensureFolderExists(p);
+}
+
+static auto buildUserStateDir() -> fs::path {
+#if _WIN32
+    // Windows: state directory is same as data directory
+    return fs::u8path(g_get_user_data_dir());
+#else
+    // Unix: $XDG_STATE_HOME or ~/.local/state
+    const char* xdgStateHome = std::getenv("XDG_STATE_HOME");
+    if (xdgStateHome && xdgStateHome[0]) {
+        // environment variable exists and is non-empty
+        return fs::u8path(xdgStateHome);
+    }
+
+    auto path = fs::u8path(g_get_home_dir());
+    return path / ".local/state";
+#endif
+}
+
+static auto getUserStateDir() -> const fs::path& {
+    // The GLib function g_get_user_state_dir is not supported on GLib < 2.72,
+    // so we implement our version here.
+
+    // Cache fs::path so it is only computed once.
+    static std::optional<const fs::path> userStateDir;
+    if (!userStateDir.has_value()) {
+        userStateDir.emplace(buildUserStateDir());
+    }
+    return *userStateDir;
+}
+
+auto Util::getStateSubfolder(const fs::path& subfolder) -> fs::path {
+    auto p = getUserStateDir();
     p /= CONFIG_FOLDER_NAME;
     p /= subfolder;
 
@@ -316,6 +356,9 @@ auto Util::getDataPath() -> fs::path {
     fs::path p = Stacktrace::getExePath().parent_path();
     if (fs::exists(p / "Resources")) {
         p = p / "Resources";
+    } else {
+        p = PACKAGE_DATA_DIR;
+        p /= PROJECT_NAME;
     }
     return p;
 #else
@@ -326,11 +369,30 @@ auto Util::getDataPath() -> fs::path {
 }
 
 auto Util::getLocalePath() -> fs::path {
-#ifdef _WIN32
-    return getDataPath() / ".." / "locale";
-#elif defined(__APPLE__)
-    return getDataPath() / "share" / "locale";
-#else
-    return getDataPath() / ".." / "locale";
+#ifdef __APPLE__
+    fs::path p = Stacktrace::getExePath().parent_path();
+    if (fs::exists(p / "Resources")) {
+        return p / "Resources" / "share" / "locale";
+    }
 #endif
+
+    return getDataPath() / ".." / "locale";
+}
+
+auto Util::getBuiltInPaletteDirectoryPath() -> fs::path { return getDataPath() / "palettes"; }
+
+auto Util::getCustomPaletteDirectoryPath() -> fs::path { return getConfigSubfolder("palettes"); }
+
+auto Util::listFilesSorted(fs::path directory) -> std::vector<fs::path> {
+    std::vector<fs::path> filePaths{};
+    if (!exists(directory)) {
+        g_warning("Directory %s does not exist.", directory.u8string().c_str());
+        return filePaths;
+    }
+
+    for (const fs::directory_entry& p: fs::directory_iterator(directory)) {
+        filePaths.push_back(p.path());
+    }
+    std::sort(filePaths.begin(), filePaths.end());
+    return filePaths;
 }

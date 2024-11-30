@@ -790,8 +790,9 @@ auto XojPageView::onKeyReleaseEvent(const KeyEvent& event) -> bool {
     return false;
 }
 
-void XojPageView::rerenderPage() {
+void XojPageView::rerenderPage(bool sizeChanged) {
     this->rerenderComplete = true;
+    this->sizeChanged = sizeChanged;
     this->xournal->getControl()->getScheduler()->addRerenderPage(this);
 }
 
@@ -810,7 +811,11 @@ void XojPageView::drawAndDeleteToolView(xoj::view::ToolView* v, const Range& rg)
         v->isViewOf(this->textEditor.get())) {
         // Draw the inputHandler's view onto the page buffer.
         std::lock_guard lock(this->drawingMutex);
-        v->drawWithoutDrawingAids(buffer.get());
+        if (auto cr = buffer.get(); cr) {
+            v->drawWithoutDrawingAids(cr);
+        } else {
+            rerenderPage();
+        }
     }
     this->deleteOverlayView(v, rg);
 }

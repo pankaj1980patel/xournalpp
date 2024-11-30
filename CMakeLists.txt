@@ -11,7 +11,7 @@ endif()
 ## Project related Variables
 ## Also update changelog in debian folder!
 project(xournalpp
-        VERSION 1.2.3
+        VERSION 1.2.4
         DESCRIPTION "Xournal++ - Open source hand note-taking program"
         HOMEPAGE_URL "https://xournalpp.github.io/"
         LANGUAGES CXX C)
@@ -120,23 +120,6 @@ if (ENABLE_PROFILING)
 endif (ENABLE_PROFILING)
 
 pkg_check_modules(ExternalModules REQUIRED IMPORTED_TARGET ${pkg-module-spec})
-
-if (#[[${CMAKE_VERSION} VERSION_LESS "3.18" AND]] ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    # bugfix for old pkg_config versions
-    get_target_property(libs PkgConfig::ExternalModules INTERFACE_LINK_LIBRARIES)
-    # message(STATUS "PkgConfig::ExternalModules::INTERFACE_LINK_LIBRARIES: ${libs}")
-    string(REPLACE "-framework;" "-framework " libs "${libs}")
-    # message(STATUS "PkgConfig::ExternalModules::INTERFACE_LINK_LIBRARIES fixed: ${libs}")
-    set_target_properties(PkgConfig::ExternalModules PROPERTIES INTERFACE_LINK_LIBRARIES "${libs}")
-
-
-    if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13")
-        # fix broken framework flags from pkgconfig
-        get_target_property(opts PkgConfig::ExternalModules INTERFACE_LINK_OPTIONS)
-        string(REPLACE "-framework;" "SHELL:-framework " opts "${opts}")
-        set_target_properties(PkgConfig::ExternalModules PROPERTIES INTERFACE_LINK_OPTIONS "${opts}")
-    endif ()
-endif ()
 
 if (UNIX AND NOT APPLE AND NOT CYGWIN)
     set(INSTALL_DESKTOP_FILES true)
@@ -248,7 +231,7 @@ mark_as_advanced(FORCE
 # Advanced development config
 set(DEV_TOOLBAR_CONFIG "toolbar.ini" CACHE STRING "Toolbar config file name")
 set(DEV_SETTINGS_XML_FILE "settings.xml" CACHE STRING "Settings file name")
-set(DEV_PALETTE_FILE "palette.gpl" CACHE STRING "Color Palette")
+set(DEV_DEFAULT_PALETTE_FILE "xournal.gpl" CACHE STRING "Default Color Palette")
 set(DEV_PRINT_CONFIG_FILE "print-config.ini" CACHE STRING "Print config file name")
 set(DEV_METADATA_FILE "metadata.ini" CACHE STRING "Metadata file name")
 set(DEV_ERRORLOG_DIR "errorlogs" CACHE STRING "Directory where errorlogfiles will be placed")
@@ -331,6 +314,10 @@ install(DIRECTORY resources
         DESTINATION "share/xournalpp"
         COMPONENT xournalpp
         )
+install(DIRECTORY palettes
+        DESTINATION "share/xournalpp"
+        COMPONENT xournalpp
+        )
 
 # Install desktop shortcuts for Linux
 if (${INSTALL_DESKTOP_FILES})
@@ -379,9 +366,6 @@ Configuration:
     Filesystem library:         ${CXX_FILESYSTEM_NAMESPACE}
     Profiling enabled:          ${ENABLE_PROFILING}
 ")
-
-option(CMAKE_DEBUG_INCLUDES_LDFLAGS "List include dirs and ldflags for xournalpp target" OFF)
-mark_as_advanced(FORCE CMAKE_DEBUG_INCLUDES_LDFLAGS)
 
 ##############################
 # Packaging options

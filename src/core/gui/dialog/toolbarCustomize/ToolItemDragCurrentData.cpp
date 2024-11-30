@@ -17,7 +17,7 @@ void ToolItemDragCurrentData::setData(GtkWidget* widget) {
     ToolItemDragDropData* d = ToolitemDragDrop::metadataGetMetadata(widget);
     if (d == nullptr) {
         g_warning("ToolItemDragCurrentData::setData(GtkWidget * widget) could not get data!");
-        Stacktrace::printStracktrace();
+        Stacktrace::printStacktrace();
         return;
     }
 
@@ -32,11 +32,11 @@ void ToolItemDragCurrentData::setData(ToolItemType type, int id, AbstractToolIte
     data->id = id;
 }
 
-void ToolItemDragCurrentData::setDataColor(int id, const NamedColor* namedColor) {
+void ToolItemDragCurrentData::setDataColor(int id, size_t paletteColorIndex) {
     data = ToolitemDragDrop::ToolItemDragDropData_new(nullptr);
     data->type = TOOL_ITEM_COLOR;
     data->id = id;
-    data->namedColor = namedColor;
+    data->paletteColorIndex = paletteColorIndex;
 }
 
 void ToolItemDragCurrentData::setData(ToolItemDragDropData* d) {

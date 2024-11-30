@@ -165,6 +165,7 @@ function app.layerAction(action) end
 --- 
 --- @param opts {splines:{coordinates:number[], tool:string, width:number, color:integer, fill:number,
 --- linestyle:string}[], allowUndoRedoAction:string}
+--- @return lightuserdata[] references to the created strokes
 --- 
 --- Required Arguments: splines
 --- Optional Arguments: pressure, tool, width, color, fill, lineStyle
@@ -180,7 +181,7 @@ function app.layerAction(action) end
 --- The function checks that the length of the coordinate table is divisible by eight, and will throw
 --- an error if it is not.
 --- 
---- Example: app.addSplines({
+--- Example: local refs = app.addSplines({
 ---            ["splines"] = { -- The outer table is a table of strokes
 ---                ["coordinates"] = { -- Each inner table is a coord stream that represents SplineSegments that can be
 --- assembled into a stroke
@@ -213,6 +214,7 @@ function app.addSplines(opts) end
 --- 
 --- @param opts {strokes:{X:number[], Y:number[], pressure:number[], tool:string, width:number, color:integer,
 --- fill:number, linestyle:string}[], allowUndoRedoAction:string}
+--- @return lightuserdata[] references to the created strokes
 --- 
 --- Required Arguments: X, Y
 --- Optional Arguments: pressure, tool, width, color, fill, lineStyle
@@ -226,7 +228,7 @@ function app.addSplines(opts) end
 --- 
 --- Example:
 --- 
---- app.addStrokes({
+--- local refs = app.addStrokes({
 ---     ["strokes"] = { -- The outer table is a table of strokes
 ---         {   -- Inside a stroke are three tables of equivalent length that represent a series of points
 ---             ["x"]        = { [1] = 110.0, [2] = 120.0, [3] = 130.0, ... },
@@ -274,6 +276,7 @@ function app.addStrokes(opts) end
 --- 
 --- @param opts {texts:{text:string, font:{name:string, size:number}, color:integer, x:number, y:number}[],
 --- allowUndoRedoAction:string}
+--- @return lightuserdata[] references to the created text elements
 --- 
 --- Parameters per textbox:
 ---   - text string: content of the textbox (required)
@@ -284,7 +287,7 @@ function app.addStrokes(opts) end
 --- 
 --- Example:
 --- 
---- app.addTexts{texts={
+--- local refs = app.addTexts{texts={
 ---   {
 ---     text="Hello World",
 ---     font={name="Noto Sans Mono Medium", size=8.0},
@@ -307,7 +310,7 @@ function app.addTexts(opts) end
 --- 
 --- @param type string "selection" or "layer"
 --- @return {text:string, font:{name:string, size:number}, color:integer, x:number, y:number, width:number,
---- height:number}[] texts
+--- height:number, ref:lightuserdata}[] texts
 --- 
 --- Required argument: type ("selection" or "layer")
 --- 
@@ -326,6 +329,7 @@ function app.addTexts(opts) end
 ---     y = 70.0,
 ---     width = 55.0,
 ---     height = 23.0,
+---     ref = userdata: 0x5f644c0700d0
 ---   },
 ---   {
 ---     text = "Testing",
@@ -338,6 +342,7 @@ function app.addTexts(opts) end
 ---     y = 70.0,
 ---     width = 55.0,
 ---     height = 23.0,
+---     ref = userdata: 0x5f644c0701e8
 ---   },
 --- }
 --- 
@@ -348,7 +353,7 @@ function app.getTexts(type) end
 --- 
 --- @param type string "selection" or "layer"
 --- @return {x:number[], y:number[], pressure:number[], tool:string, width:number, color:integer, fill:number,
---- linestyle:string}[] strokes
+--- linestyle:string, ref:lightuserdata}[] strokes
 --- 
 --- Required argument: type ("selection" or "layer")
 --- 
@@ -367,6 +372,7 @@ function app.getTexts(type) end
 ---             ["color"] = 0xa000f0,
 ---             ["fill"] = 0,
 ---             ["lineStyle"] = "plain",
+---             ["ref"] = userdata: 0x5f644c02c538
 ---         },
 ---         {
 ---             ["x"]         = {207, 207.5, 315.2, 315.29, 207.5844},
@@ -376,6 +382,7 @@ function app.getTexts(type) end
 ---             ["color"]     = 16744448,
 ---             ["fill"]      = -1,
 ---             ["lineStyle"] = "plain",
+---             ["ref"] = userdata: 0x5f644c02d440
 ---         },
 ---         {
 ---             ["x"]         = {387.60, 387.6042, 500.879, 500.87, 387.604},
@@ -385,6 +392,7 @@ function app.getTexts(type) end
 ---             ["color"]     = 16744448,
 ---             ["fill"]      = -1,
 ---             ["lineStyle"] = "plain",
+---             ["ref"] = userdata: 0x5f644c0700d0
 ---         },
 --- }
 function app.getStrokes(type) end
@@ -633,6 +641,16 @@ function app.scrollToPage(page, relative) end
 --- scrolls to page position 200pt right and 50pt down from the left page corner  (absolute mode)
 function app.scrollToPos(x, y, relative) end
 
+--- Obtains the label of the specified page in the pdf background.
+--- 
+--- @param page integer
+--- @return string|nil Returns the label on success and (nil, message) if page number is out of range.
+--- @return string
+--- 
+--- Example 1: local label = app.getPageLabel(10)
+---  ' obtains the page label of page 10 in the background pdf
+function app.getPageLabel(page) end
+
 --- Sets the current page as indicated (without scrolling)
 --- The page number passed is clamped to the range between first page and last page
 --- 
@@ -710,6 +728,21 @@ function app.scaleTextElements(factor) end
 --- Example: app.getDisplayDpi()
 function app.getDisplayDpi() end
 
+--- Gets the current zoom.
+--- 
+--- @return double current zoom level
+--- 
+--- Example: app.getZoom()
+function app.getZoom() end
+
+--- Sets the current zoom.
+--- 
+--- @param zoom number
+--- 
+--- Example: app.setZoom(2.5)
+--- Changes zoom level to 2.5
+function app.setZoom(zoom) end
+
 --- Exports the current document as a pdf or as a svg or png image
 --- 
 --- @param opts {outputFile:string, range:string, background:string, progressiveMode: boolean}
@@ -745,6 +778,7 @@ function app.openFile(path, pageNr, oldDocument) end
 --- 
 --- @param opts {images:{path:string, data:string, x:number, y:number, maxHeight:number, maxWidth:number,
 --- aspectRatio:boolean}[], allowUndoRedoAction:string}
+--- @return lightuserdata|string[]
 --- 
 --- Global parameters:
 ---  - images table: array of image-parameter-tables
@@ -773,15 +807,16 @@ function app.openFile(path, pageNr, oldDocument) end
 --- specified. Still, the scale parameter is applied after this width/height scaling and if after that the dimensions are
 --- too large for the page, the image still gets scaled down afterwards.
 --- 
---- Returns as many values as images were passed. A nil value represents success, while
---- on error the value corresponding to the image will be a string with the error message.
---- If the parameters don't fit at all, a real lua error might be thrown immediately.
+--- Returns a table with as many values as images were passed. A value of type lightuserdata represents the reference to
+--- the image, while on error the value corresponding to the image will be a string with the error message. If the
+--- parameters don't fit at all, a real lua error might be thrown immediately.
 --- 
---- Example 1: app.addImages{images={{path="/media/data/myImg.png", x=10, y=20, scale=2},
+--- Example 1: local refs = app.addImages{images={{path="/media/data/myImg.png", x=10, y=20, scale=2},
 ---                                            {path="/media/data/myImg2.png", maxHeight=300, aspectRatio=true}},
 ---                                    allowUndoRedoAction="grouped",
 ---                                            }
---- Example 2: app.addImages{images={{data="<binary image data>", x=100, y=200, maxHeight=300, maxWidth=400}}}
+--- Example 2: local refs = app.addImages{images={{data="<binary image data>", x=100, y=200, maxHeight=300,
+--- maxWidth=400}}}
 function app.addImages(opts) end
 
 --- Puts a Lua Table of the Images (from the selection tool / selected layer) onto the stack.
@@ -789,7 +824,7 @@ function app.addImages(opts) end
 --- 
 --- @param type string "selection" or "layer"
 --- @return {x:number, y:number, width:number, height:number, data:string, format:string, imageWidth:number,
---- imageHeight:number}[] images
+--- imageHeight:number, ref:lightuserdata}[] images
 --- 
 --- Required argument: type ("selection" or "layer")
 --- 
@@ -806,6 +841,7 @@ function app.addImages(opts) end
 ---         ["format"] = string,
 ---         ["imageWidth"] = integer,
 ---         ["imageHeight"] = integer,
+---         ["ref"] = userdata: 0x5f644c0700d0
 ---     },
 ---     {
 ---         ...
@@ -813,4 +849,22 @@ function app.addImages(opts) end
 ---     ...
 --- }
 function app.getImages(type) end
+
+--- Clears a selection by releasing its elements to the current layer.
+--- 
+--- Example: app.clearSelection()
+--- 
+function app.clearSelection() end
+
+--- Adds those elements from the current layer to the current selection,
+--- whose addresses are in refs. If there is no selection create one.
+--- 
+--- @param refs lightuserdata[] references to elements from the current layer
+--- 
+--- Required argument: refs
+--- 
+--- Example: local refs = app.addStrokes( <some stroke data> )
+---          app.addToSelection(refs)
+--- 
+function app.addToSelection(refs) end
 

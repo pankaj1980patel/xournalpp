@@ -14,6 +14,7 @@
 #include <cstring>   // for strlen, size_t
 #include <optional>  // for optional
 #include <string>    // for string, allocator, basic_string
+#include <vector>    // for vector
 
 #include <gio/gio.h>  // for GFile
 #include <glib.h>     // for g_free, GError, g_error_free, g_filename_fro...
@@ -79,7 +80,7 @@ void clearExtensions(fs::path& path, const std::string& ext = "");
     if (path == nullptr) {
         return {};
     }
-    size_t pSize{0};
+    gsize pSize{0};
     GError* err{};
     auto* u8Path = g_filename_to_utf8(path, as_signed(std::strlen(path)), nullptr, &pSize, &err);
     if (err) {
@@ -96,7 +97,7 @@ void clearExtensions(fs::path& path, const std::string& ext = "");
 
 [[maybe_unused]] [[nodiscard]] inline std::string toGFilename(fs::path const& path) {
     auto u8path = path.u8string();
-    size_t pSize{0};
+    gsize pSize{0};
     GError* err{};
     auto* local = g_filename_from_utf8(u8path.c_str(), as_signed(u8path.size()), nullptr, &pSize, &err);
     if (err) {
@@ -134,12 +135,23 @@ auto system_single_byte_filename(const fs::path& path) -> std::string;
 [[maybe_unused]] [[nodiscard]] fs::path getConfigSubfolder(const fs::path& subfolder = "");
 [[maybe_unused]] [[nodiscard]] fs::path getCacheSubfolder(const fs::path& subfolder = "");
 [[maybe_unused]] [[nodiscard]] fs::path getDataSubfolder(const fs::path& subfolder = "");
+[[maybe_unused]] [[nodiscard]] fs::path getStateSubfolder(const fs::path& subfolder = "");
 [[maybe_unused]] [[nodiscard]] fs::path getConfigFile(const fs::path& relativeFileName = "");
 [[maybe_unused]] [[nodiscard]] fs::path getCacheFile(const fs::path& relativeFileName = "");
 [[maybe_unused]] [[nodiscard]] fs::path getTmpDirSubfolder(const fs::path& subfolder = "");
 [[maybe_unused]] [[nodiscard]] fs::path getAutosaveFilepath();
-[[maybe_unused]] [[nodiscard]] fs::path getGettextFilepath(const char* localeDir);
+[[maybe_unused]] [[nodiscard]] fs::path getGettextFilepath(fs::path const& localeDir);
 [[maybe_unused]] [[nodiscard]] fs::path getDataPath();
 [[maybe_unused]] [[nodiscard]] fs::path getLocalePath();
+fs::path getBuiltInPaletteDirectoryPath();
+fs::path getCustomPaletteDirectoryPath();
 
+/**
+ * List all files in a directory sorted alphabetically
+ *
+ * If the directory does not exist it returns an empty list.
+ * @param directory to search
+ * @return files in directory
+ */
+std::vector<fs::path> listFilesSorted(fs::path directory);
 }  // namespace Util

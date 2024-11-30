@@ -87,6 +87,7 @@
 #include "undo/InsertDeletePageUndoAction.h"                     // for Inse...
 #include "undo/InsertUndoAction.h"                               // for Inse...
 #include "undo/MoveSelectionToLayerUndoAction.h"                 // for Move...
+#include "undo/PageSizeChangeUndoAction.h"                       // for PageSizeChangeUndoAction
 #include "undo/SwapUndoAction.h"                                 // for SwapUndoAction
 #include "undo/UndoAction.h"                                     // for Undo...
 #include "util/Assert.h"                                         // for xoj_assert
@@ -129,6 +130,7 @@ Control::Control(GApplication* gtkApp, GladeSearchpath* gladeSearchPath, bool di
     auto name = Util::getConfigFile(SETTINGS_XML_FILE);
     this->settings = new Settings(std::move(name));
     this->settings->load();
+    this->loadPaletteFromSettings();
 
     this->pageTypes = new PageTypeHandler(gladeSearchPath);
 
@@ -390,6 +392,14 @@ bool Control::toggleGeometryTool() {
     std::unique_ptr<InputHandlerClass> geometryToolInputHandler =
             std::make_unique<InputHandlerClass>(this->win->getXournal(), geometryToolController.get());
     geometryToolInputHandler->registerToPool(tool->getHandlerPool());
+    Range range = view->getVisiblePart();
+    if (range.isValid()) {
+        double originX = (range.minX + range.maxX) * .5;
+        double originY = (range.minY + range.maxY) * .5;
+        geometryToolController->translate(originX, originY);
+    } else {
+        geometryToolController->translate(view->getWidth() * .5, view->getHeight() * .5);
+    }
     xournal->input->setGeometryToolInputHandler(std::move(geometryToolInputHandler));
     geometryTool->notify();
     return true;
@@ -438,7 +448,7 @@ void Control::selectAlpha(OpacityFeature feature) {
             break;
         default:
             g_warning("Unhandled OpacityFeature for selectAlpha event: %s", opacityFeatureToString(feature).c_str());
-            Stacktrace::printStracktrace();
+            Stacktrace::printStacktrace();
             break;
     }
     auto dlg = xoj::popup::PopupWindowWrapper<xoj::popup::SelectOpacityDialog>(
@@ -456,7 +466,7 @@ void Control::selectAlpha(OpacityFeature feature) {
                     default:
                         g_warning("Unhandled OpacityFeature for callback of SelectOpacityDialog: %s",
                                   opacityFeatureToString(feature).c_str());
-                        Stacktrace::printStracktrace();
+                        Stacktrace::printStacktrace();
                         break;
                 }
             });
@@ -792,18 +802,27 @@ void Control::movePageTowardsEnd() {
     this->getScrollHandler()->scrollToPage(currentPageNo + 1);
 }
 
+/// Remove mnemonic indicators in menu labels
+static std::string removeMnemonics(std::string orig) {
+    std::regex reg("_(.)");
+    return std::regex_replace(orig, reg, "$1");
+}
+
 void Control::askInsertPdfPage(size_t pdfPage) {
     using Responses = enum { CANCEL = 1, AFTER = 2, END = 3 };
     std::vector<XojMsgBox::Button> buttons = {{_("Cancel"), Responses::CANCEL},
                                               {_("Insert after current page"), Responses::AFTER},
                                               {_("Insert at end"), Responses::END}};
 
+    // Must match the labels in main.glade and PageTypeHandler.cpp
+    std::string pathToMenuEntry = removeMnemonics(_("_Journal") + std::string(" → ") + _("Paper B_ackground") +
+                                                  std::string(" → ") + _("With PDF background"));
+
     XojMsgBox::askQuestion(this->getGtkWindow(),
                            FC(_F("Your current document does not contain PDF Page no {1}\n"
                                  "Would you like to insert this page?\n\n"
-                                 "Tip: You can select Journal → Paper Background → PDF Background "
-                                 "to insert a PDF page.") %
-                              static_cast<int64_t>(pdfPage + 1)),
+                                 "Tip: You can select {2} to insert a PDF page.") %
+                              static_cast<int64_t>(pdfPage + 1) % pathToMenuEntry),
                            "", buttons, [ctrl = this, pdfPage](int response) {
                                if (response == Responses::AFTER || response == Responses::END) {
                                    Document* doc = ctrl->getDocument();
@@ -929,10 +948,13 @@ void Control::paperFormat() {
             this->gladeSearchPath, settings, page->getWidth(), page->getHeight(),
             [ctrl = this, page](double width, double height) {
                 ctrl->doc->lock();
+                double oldW = page->getWidth();
+                double oldH = page->getHeight();
                 Document::setPageSize(page, width, height);
                 size_t pageNo = ctrl->doc->indexOf(page);
                 size_t pageCount = ctrl->doc->getPageCount();
                 ctrl->doc->unlock();
+                ctrl->undoRedo->addUndoAction(std::make_unique<PageSizeChangeUndoAction>(page, oldW, oldH));
                 if (pageNo != npos && pageNo < pageCount) {
                     ctrl->firePageSizeChanged(pageNo);
                 }
@@ -1308,70 +1330,86 @@ void Control::showSettings() {
         StylusCursorType stylusCursorType;
         bool highlightPosition;
         SidebarNumberingStyle sidebarStyle;
-    } callbackData = {settings->getBorderColor(),
-                      settings->getAddVerticalSpace(),
-                      settings->getAddVerticalSpaceAmountAbove(),
-                      settings->getAddVerticalSpaceAmountBelow(),
-                      settings->getAddHorizontalSpace(),
-                      settings->getAddHorizontalSpaceAmountRight(),
-                      settings->getAddHorizontalSpaceAmountLeft(),
-                      settings->getUnlimitedScrolling(),
-                      settings->getStylusCursorType(),
-                      settings->isHighlightPosition(),
-                      settings->getSidebarNumberingStyle()};
+        std::optional<std::filesystem::path> colorPaletteSetting;
+    } settingsBeforeDialog = {
+            settings->getBorderColor(),
+            settings->getAddVerticalSpace(),
+            settings->getAddVerticalSpaceAmountAbove(),
+            settings->getAddVerticalSpaceAmountBelow(),
+            settings->getAddHorizontalSpace(),
+            settings->getAddHorizontalSpaceAmountRight(),
+            settings->getAddHorizontalSpaceAmountLeft(),
+            settings->getUnlimitedScrolling(),
+            settings->getStylusCursorType(),
+            settings->isHighlightPosition(),
+            settings->getSidebarNumberingStyle(),
+            settings->getColorPaletteSetting(),
+    };
 
     auto dlg = xoj::popup::PopupWindowWrapper<SettingsDialog>(
-            this->gladeSearchPath, settings, this, [ctrl = this, callbackData]() {
+            this->gladeSearchPath, settings, this,
+            std::vector<fs::path>{Util::getBuiltInPaletteDirectoryPath(), Util::getCustomPaletteDirectoryPath()},
+            [ctrl = this, settingsBeforeDialog]() {
                 Settings* settings = ctrl->getSettings();
                 MainWindow* win = ctrl->win;
                 XournalView* xournal = win->getXournal();
                 // note which settings have changed and act accordingly
-                if (callbackData.selectionColor != settings->getBorderColor()) {
+                if (settingsBeforeDialog.selectionColor != settings->getBorderColor()) {
                     xournal->forceUpdatePagenumbers();
                 }
 
                 if (!settings->getUnlimitedScrolling() &&
-                    (callbackData.verticalSpace != settings->getAddVerticalSpace() ||
-                     callbackData.horizontalSpace != settings->getAddHorizontalSpace() ||
-                     callbackData.verticalSpaceAmountAbove != settings->getAddVerticalSpaceAmountAbove() ||
-                     callbackData.horizontalSpaceAmountRight != settings->getAddHorizontalSpaceAmountRight() ||
-                     callbackData.verticalSpaceAmountBelow != settings->getAddVerticalSpaceAmountBelow() ||
-                     callbackData.horizontalSpaceAmountLeft != settings->getAddHorizontalSpaceAmountLeft())) {
+                    (settingsBeforeDialog.verticalSpace != settings->getAddVerticalSpace() ||
+                     settingsBeforeDialog.horizontalSpace != settings->getAddHorizontalSpace() ||
+                     settingsBeforeDialog.verticalSpaceAmountAbove != settings->getAddVerticalSpaceAmountAbove() ||
+                     settingsBeforeDialog.horizontalSpaceAmountRight != settings->getAddHorizontalSpaceAmountRight() ||
+                     settingsBeforeDialog.verticalSpaceAmountBelow != settings->getAddVerticalSpaceAmountBelow() ||
+                     settingsBeforeDialog.horizontalSpaceAmountLeft != settings->getAddHorizontalSpaceAmountLeft())) {
                     xournal->layoutPages();
                     double const xChange =
                             (settings->getAddHorizontalSpace() ? settings->getAddHorizontalSpaceAmountLeft() : 0) -
-                            (callbackData.horizontalSpace ? callbackData.horizontalSpaceAmountLeft : 0);
+                            (settingsBeforeDialog.horizontalSpace ? settingsBeforeDialog.horizontalSpaceAmountLeft : 0);
                     const double yChange =
                             (settings->getAddVerticalSpace() ? settings->getAddVerticalSpaceAmountAbove() : 0) -
-                            (callbackData.verticalSpace ? callbackData.verticalSpaceAmountAbove : 0);
+                            (settingsBeforeDialog.verticalSpace ? settingsBeforeDialog.verticalSpaceAmountAbove : 0);
 
                     win->getLayout()->scrollRelative(xChange, yChange);
                 }
 
-                if (callbackData.unlimitedScrolling != settings->getUnlimitedScrolling()) {
+                if (settingsBeforeDialog.unlimitedScrolling != settings->getUnlimitedScrolling()) {
                     const int xUnlimited = static_cast<int>(win->getLayout()->getVisibleRect().width);
                     const int yUnlimited = static_cast<int>(win->getLayout()->getVisibleRect().height);
                     const double xChange =
-                            callbackData.unlimitedScrolling ?
-                                    -xUnlimited + (callbackData.horizontalSpace ?
-                                                           callbackData.horizontalSpaceAmountLeft :
+                            settingsBeforeDialog.unlimitedScrolling ?
+                                    -xUnlimited + (settingsBeforeDialog.horizontalSpace ?
+                                                           settingsBeforeDialog.horizontalSpaceAmountLeft :
                                                            0) :
-                                    xUnlimited -
-                                            (callbackData.horizontalSpace ? callbackData.horizontalSpaceAmountLeft : 0);
+                                    xUnlimited - (settingsBeforeDialog.horizontalSpace ?
+                                                          settingsBeforeDialog.horizontalSpaceAmountLeft :
+                                                          0);
                     const double yChange =
-                            callbackData.unlimitedScrolling ?
-                                    -yUnlimited +
-                                            (callbackData.verticalSpace ? callbackData.verticalSpaceAmountAbove : 0) :
-                                    yUnlimited -
-                                            (callbackData.verticalSpace ? callbackData.verticalSpaceAmountAbove : 0);
+                            settingsBeforeDialog.unlimitedScrolling ?
+                                    -yUnlimited + (settingsBeforeDialog.verticalSpace ?
+                                                           settingsBeforeDialog.verticalSpaceAmountAbove :
+                                                           0) :
+                                    yUnlimited - (settingsBeforeDialog.verticalSpace ?
+                                                          settingsBeforeDialog.verticalSpaceAmountAbove :
+                                                          0);
 
                     xournal->layoutPages();
                     win->getLayout()->scrollRelative(xChange, yChange);
                 }
 
-                if (callbackData.stylusCursorType != settings->getStylusCursorType() ||
-                    callbackData.highlightPosition != settings->isHighlightPosition()) {
+                if (settingsBeforeDialog.stylusCursorType != settings->getStylusCursorType() ||
+                    settingsBeforeDialog.highlightPosition != settings->isHighlightPosition()) {
                     ctrl->getCursor()->updateCursor();
+                }
+
+                if (settingsBeforeDialog.colorPaletteSetting.has_value() &&
+                    settingsBeforeDialog.colorPaletteSetting.value() != settings->getColorPaletteSetting()) {
+                    ctrl->loadPaletteFromSettings();
+                    ctrl->getWindow()->getToolMenuHandler()->updateColorToolItems(ctrl->getPalette());
+                    ctrl->getWindow()->reloadToolbars();
                 }
 
                 ctrl->getSidebar()->saveSize();
@@ -1384,7 +1422,7 @@ void Control::showSettings() {
                 ctrl->zoom->setZoomStepScroll(settings->getZoomStepScroll() / 100.0);
                 ctrl->zoom->setZoom100Value(settings->getDisplayDpi() / Util::DPI_NORMALIZATION_FACTOR);
 
-                if (callbackData.sidebarStyle != settings->getSidebarNumberingStyle()) {
+                if (settingsBeforeDialog.sidebarStyle != settings->getSidebarNumberingStyle()) {
                     ctrl->getSidebar()->layout();
                 }
 
@@ -1804,13 +1842,17 @@ void Control::showFontDialog() {
     auto* dlg = gtk_font_chooser_dialog_new(_("Select font"), GTK_WINDOW(this->win->getWindow()));
     gtk_font_chooser_set_font(GTK_FONT_CHOOSER(dlg), settings->getFont().asString().c_str());
 
-    auto popup = xoj::popup::PopupWindowWrapper<XojMsgBox>(GTK_DIALOG(dlg), [this, dlg](int response) {
-        if (response == GTK_RESPONSE_OK) {
-            auto font = xoj::util::OwnedCString::assumeOwnership(gtk_font_chooser_get_font(GTK_FONT_CHOOSER(dlg)));
-            this->actionDB->fireChangeActionState(Action::FONT, font.get());
-        }
-        this->actionDB->enableAction(Action::SELECT_FONT, true);
-    });
+    auto popup = xoj::popup::PopupWindowWrapper<XojMsgBox>(
+            GTK_DIALOG(dlg),
+            [this, dlg](int response) {
+                if (response == GTK_RESPONSE_OK) {
+                    auto font =
+                            xoj::util::OwnedCString::assumeOwnership(gtk_font_chooser_get_font(GTK_FONT_CHOOSER(dlg)));
+                    this->actionDB->fireChangeActionState(Action::FONT, font.get());
+                }
+                this->actionDB->enableAction(Action::SELECT_FONT, true);
+            },
+            XojMsgBox::IMMEDIATE);  // We need IMMEDIATE so accessing GTK_FONT_CHOOSER(dlg) is not UB
     popup.show(GTK_WINDOW(this->win->getWindow()));
 }
 
@@ -1821,14 +1863,17 @@ void Control::showColorChooserDialog() {
     gtk_color_chooser_set_rgba(GTK_COLOR_CHOOSER(dlg), &c);
     gtk_color_chooser_set_use_alpha(GTK_COLOR_CHOOSER(dlg), false);
 
-    auto popup = xoj::popup::PopupWindowWrapper<XojMsgBox>(GTK_DIALOG(dlg), [this, dlg](int response) {
-        if (response == GTK_RESPONSE_OK) {
-            GdkRGBA c;
-            gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(dlg), &c);
-            this->actionDB->fireChangeActionState(Action::TOOL_COLOR, Util::GdkRGBA_to_rgb(c));
-        }
-        this->actionDB->enableAction(Action::SELECT_COLOR, true);
-    });
+    auto popup = xoj::popup::PopupWindowWrapper<XojMsgBox>(
+            GTK_DIALOG(dlg),
+            [this, dlg](int response) {
+                if (response == GTK_RESPONSE_OK) {
+                    GdkRGBA c;
+                    gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(dlg), &c);
+                    this->actionDB->fireChangeActionState(Action::TOOL_COLOR, Util::GdkRGBA_to_rgb(c));
+                }
+                this->actionDB->enableAction(Action::SELECT_COLOR, true);
+            },
+            XojMsgBox::IMMEDIATE);  // We need IMMEDIATE so accessing GTK_COLOR_CHOOSER(dlg) is not UB
     popup.show(GTK_WINDOW(this->win->getWindow()));
 }
 
@@ -2234,7 +2279,7 @@ void Control::clipboardPasteXournal(ObjectInputStream& in) {
         win->getXournal()->setSelection(selection.release());
     } catch (const std::exception& e) {
         g_warning("could not paste, Exception occurred: %s", e.what());
-        Stacktrace::printStracktrace();
+        Stacktrace::printStacktrace();
         if (selection) {
             for (Element* el: selection->getElements()) {
                 delete el;
@@ -2421,3 +2466,29 @@ auto Control::getPageBackgroundChangeController() const -> PageBackgroundChangeC
 auto Control::getLayerController() const -> LayerController* { return this->layerController; }
 
 auto Control::getPluginController() const -> PluginController* { return this->pluginController; }
+
+auto Control::getPalette() const -> const Palette& { return *(this->palette); }
+
+auto Control::loadPaletteFromSettings() -> void {
+    const auto palettePath = this->settings->getColorPaletteSetting();
+    if (palettePath.empty()) {
+        this->palette->load_default();
+        return;
+    }
+
+    auto newPalette = std::make_unique<Palette>(palettePath);
+    this->palette = std::move(newPalette);
+
+    // If file does not exist there is no need to attempt parsing it
+    if (!fs::exists(this->palette->getFilePath())) {
+        this->palette->load_default();
+        return;
+    }
+
+    try {
+        this->palette->load();
+    } catch (const std::exception& e) {
+        this->palette->parseErrorDialog(e);
+        this->palette->load_default();
+    }
+}

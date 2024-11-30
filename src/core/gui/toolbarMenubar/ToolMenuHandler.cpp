@@ -56,15 +56,14 @@ ToolMenuHandler::ToolMenuHandler(Control* control, GladeGui* gui):
         tbModel(std::make_unique<ToolbarModel>()),
         pageBackgroundChangeController(control->getPageBackgroundChangeController()),
         iconNameHelper(control->getSettings()),
-        pageTypeSelectionPopup(std::make_unique<PageTypeSelectionPopover>(
-                control->getPageTypes(), control->getPageBackgroundChangeController(), control->getSettings(),
-                GTK_APPLICATION_WINDOW(parent))) {}
+        pageTypeSelectionPopup(std::make_unique<PageTypeSelectionPopover>(control, control->getSettings(),
+                                                                          GTK_APPLICATION_WINDOW(parent))) {}
 
 void ToolMenuHandler::populate(const GladeSearchpath* gladeSearchPath) {
     initToolItems();
 
     auto file = gladeSearchPath->findFile("", "toolbar.ini");
-    if (!tbModel->parse(file, true, this->control->getSettings()->getColorPalette())) {
+    if (!tbModel->parse(file, true, this->control->getPalette())) {
         std::string msg = FS(_F("Could not parse general toolbar.ini file: {1}\n"
                                 "No Toolbars will be available") %
                              file.u8string());
@@ -73,7 +72,7 @@ void ToolMenuHandler::populate(const GladeSearchpath* gladeSearchPath) {
 
     file = Util::getConfigFile(TOOLBAR_CONFIG);
     if (fs::exists(file)) {
-        if (!tbModel->parse(file, false, this->control->getSettings()->getColorPalette())) {
+        if (!tbModel->parse(file, false, this->control->getPalette())) {
             string msg = FS(_F("Could not parse custom toolbar.ini file: {1}\n"
                                "Toolbars will not be available") %
                             file.u8string());
@@ -97,8 +96,7 @@ void ToolMenuHandler::unloadToolbar(GtkWidget* toolbar) {
 
 void ToolMenuHandler::load(const ToolbarData* d, GtkWidget* toolbar, const char* toolbarName, bool horizontal) {
     int count = 0;
-
-    const Palette& palette = this->control->getSettings()->getColorPalette();
+    const auto palette = this->control->getPalette();
 
     for (const ToolbarEntry& e: d->contents) {
         if (e.getName() == toolbarName) {
@@ -150,7 +148,7 @@ void ToolMenuHandler::load(const ToolbarData* d, GtkWidget* toolbar, const char*
                     auto it = item->createToolItem(horizontal);
                     gtk_toolbar_insert(GTK_TOOLBAR(toolbar), GTK_TOOL_ITEM(it.get()), -1);
 
-                    ToolitemDragDrop::attachMetadataColor(it.get(), dataItem.getId(), &namedColor, item.get());
+                    ToolitemDragDrop::attachMetadataColor(it.get(), dataItem.getId(), paletteIndex, item.get());
 
                     continue;
                 }
@@ -412,7 +410,7 @@ void ToolMenuHandler::initToolItems() {
     emplaceCustomItemTgl("DRAW_DOUBLE_ARROW", Cat::TOOLS, Action::TOOL_DRAW_DOUBLE_ARROW, "draw-double-arrow",
                          _("Draw Double Arrow"));
     emplaceCustomItemTgl("DRAW_COORDINATE_SYSTEM", Cat::TOOLS, Action::TOOL_DRAW_COORDINATE_SYSTEM,
-                         "draw-coordinate-system", _("Draw coordinate system"));
+                         "draw-coordinate-system", _("Draw Coordinate System"));
     emplaceCustomItemTgl("RULER", Cat::TOOLS, Action::TOOL_DRAW_LINE, "draw-line", _("Draw Line"));
     emplaceCustomItemTgl("DRAW_SPLINE", Cat::TOOLS, Action::TOOL_DRAW_SPLINE, "draw-spline", _("Draw Spline"));
 
@@ -510,6 +508,15 @@ auto ToolMenuHandler::getColorToolItems() const -> const std::vector<std::unique
 
 auto ToolMenuHandler::iconName(const char* icon) -> std::string { return iconNameHelper.iconName(icon); }
 
+void ToolMenuHandler::updateColorToolItems(const Palette& palette) {
+    for (const auto& it: this->toolbarColorItems) {
+        it->updateColor(palette);
+    }
+}
+
 void ToolMenuHandler::setDefaultNewPageType(const std::optional<PageType>& pt) {
-    this->pageTypeSelectionPopup->setSelected(pt);
+    this->pageTypeSelectionPopup->setSelectedPT(pt);
+}
+void ToolMenuHandler::setDefaultNewPaperSize(const std::optional<PaperSize>& paperSize) {
+    this->pageTypeSelectionPopup->setSelectedPaperSize(paperSize);
 }

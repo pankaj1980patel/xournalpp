@@ -42,7 +42,7 @@ static inline void buildLabel(Builder& builder, OpacityFeature opacityFeature) {
             break;
         default:
             g_warning("No opacityFeature description set for '%s'", opacityFeatureToString(opacityFeature).c_str());
-            Stacktrace::printStracktrace();
+            Stacktrace::printStacktrace();
             break;
     }
     gtk_label_set_label(GTK_LABEL(builder.get("label1")),
@@ -64,10 +64,10 @@ xoj::popup::SelectOpacityDialog::SelectOpacityDialog(GladeSearchpath* gladeSearc
 
     setPreviewImage(alpha);
 
-    g_signal_connect(alphaRange, "change-value",
-                     G_CALLBACK(+[](GtkRange* range, GtkScrollType scroll, gdouble value, SelectOpacityDialog* self) {
-                         self->setPreviewImage(percentToByte(value));
-                         gtk_range_set_value(range, value);
+
+    g_signal_connect(alphaRange, "value-changed", G_CALLBACK(+[](GtkRange* range, gpointer self) {
+                         static_cast<SelectOpacityDialog*>(self)->setPreviewImage(
+                                 percentToByte(round_cast<int>(gtk_range_get_value(range))));
                      }),
                      this);
 

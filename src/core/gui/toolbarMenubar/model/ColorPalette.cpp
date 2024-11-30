@@ -33,9 +33,10 @@ void Palette::load() {
     // parse standard header line
     parseFirstGimpPaletteLine(line);
     // attempt parsing line by line as either header, color, or fallback
-    while (gplFile.peek() != EOF && getline(gplFile, line)) {
+    while (!gplFile.eof() && gplFile.peek() != EOF && getline(gplFile, line)) {
         lineNumber++;
-        parseCommentLine(line) || parseHeaderLine(line) || parseColorLine(line) || parseLineFallback(lineNumber);
+        parseCommentLine(line) || parseHeaderLine(line) || parseColorLine(line) || parseEmptyLine(line) ||
+                parseLineFallback(lineNumber);
     }
     if (namedColors.size() < 1) {
         throw std::invalid_argument("Your Palettefile has no parsable color. It needs at least one!");
@@ -52,6 +53,13 @@ auto Palette::load_default() -> void {
     while (getline(defaultFile, line)) {
         parseHeaderLine(line) || parseColorLine(line);
     }
+}
+
+auto Palette::getHeader(const std::string& attr) const -> std::string {
+    if (header.find(attr) == header.end()) {
+        return std::string{};
+    }
+    return header.at(attr);
 }
 
 auto Palette::parseFirstGimpPaletteLine(const std::string& line) const -> bool {
@@ -84,6 +92,8 @@ auto Palette::parseColorLine(const std::string& line) -> bool {
 
 auto Palette::parseCommentLine(const std::string& line) const -> bool { return line.front() == '#'; }
 
+auto Palette::parseEmptyLine(const std::string& line) const -> bool { return line.empty(); }
+
 auto Palette::parseLineFallback(int lineNumber) const -> const bool {
     throw std::invalid_argument(FS(FORMAT_STR("The line {1} is malformed.") % lineNumber));
 }
@@ -104,7 +114,7 @@ auto Palette::size() const -> size_t { return namedColors.size(); }
 auto Palette::default_palette() -> const std::string {
     auto d = serdes_stream<std::stringstream>();
     d << "GIMP Palette\n"
-      << "Name: Xournal Default Palette\n"
+      << "Name: Xournal Palette\n"
       << "#\n"
       << 0 << " " << 0 << " " << 0 << " " << NC_("Color", "Black") << "\n"
       << 0 << " " << 128 << " " << 0 << " " << NC_("Color", "Green") << "\n"
@@ -127,7 +137,7 @@ void Palette::create_default(fs::path filepath) {
 
 auto Header::getAttribute() const -> std::string { return this->attribute; };
 auto Header::getValue() const -> std::string { return this->value; };
-
+auto Palette::getFilePath() const -> fs::path const& { return this->filepath; };
 
 auto operator>>(std::istream& str, Header& header) -> std::istream& {
     /*
