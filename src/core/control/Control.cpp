@@ -2193,12 +2193,15 @@ void Control::clipboardPasteImage(GdkPixbuf* img) {
     auto pageHeight = page->getHeight();
     this->doc->unlock();
 
-    // Size: 3/4 of the page size
-    pageWidth = pageWidth * 3.0 / 4.0;
-    pageHeight = pageHeight * 3.0 / 4.0;
+    // Size: 1/2 of the page size
+    pageWidth = pageWidth * 0.5;
+    pageHeight = pageHeight * 0.5;
 
-    auto scaledWidth = width;
-    auto scaledHeight = height;
+    // auto scaledWidth = width;
+    // auto scaledHeight = height;
+
+    auto scaledWidth = static_cast<double>(gdk_pixbuf_get_width(img));
+    auto scaledHeight = static_cast<double>(gdk_pixbuf_get_height(img));
 
     if (width > pageWidth) {
         scaledWidth = pageWidth;
@@ -2239,7 +2242,7 @@ void Control::clipboardPaste(ElementPtr e) {
     double width = e->getElementWidth();
     double height = e->getElementHeight();
 
-    x = std::max(0.0, x - width / 2);
+    x = 0;//std::max(0.0, x - width / 2);
     y = std::max(0.0, y - height / 2);
 
     e->setX(x);
