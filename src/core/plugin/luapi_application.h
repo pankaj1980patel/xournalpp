@@ -706,7 +706,7 @@ static void refsHelper(lua_State* L, std::vector<Element*> elements) {
     lua_newtable(L);
     size_t count = 0;
     for (Element* element: elements) {
-        lua_pushinteger(L, ++count);                            // index
+        lua_pushinteger(L, strict_cast<lua_Integer>(++count));  // index
         lua_pushlightuserdata(L, static_cast<void*>(element));  // value
         lua_settable(L, -3);                                    // insert
     }
@@ -2222,7 +2222,7 @@ static int applib_getDocumentStructure(lua_State* L) {
         // add (non-background) layers
         int currLayer = 0;
 
-        for (auto l: *page->getLayers()) {
+        for (auto l: page->getLayers()) {
             lua_pushinteger(L, ++currLayer);  // key of the layer
             lua_newtable(L);                  // beginning of table for layer l
 
@@ -2526,37 +2526,6 @@ static int applib_setBackgroundName(lua_State* L) {
     if (lua_isstring(L, 1)) {
         auto name = lua_tostring(L, 1);
         page->setBackgroundName(name);
-    }
-
-    return 0;
-}
-
-
-/**
- * Scales all text elements of the current layer by the given scale factor.
- * This means the font sizes get scaled, wheras the position of the left upper corner
- * of the bounding box remains unchanged
- *
- * @param factor number
- *
- * Example: app.scaleTextElements(2.3)
- * scales all text elements on the current layer with factor 2.3
- **/
-static int applib_scaleTextElements(lua_State* L) {
-    Plugin* plugin = Plugin::getPluginFromLua(L);
-    Control* control = plugin->getControl();
-
-    double f = luaL_checknumber(L, 1);
-
-    control->clearSelectionEndText();
-
-    const auto& elements = control->getCurrentPage()->getSelectedLayer()->getElements();
-
-    for (auto const& e: elements) {
-        if (e->getType() == ELEMENT_TEXT) {
-            Text* t = static_cast<Text*>(e.get());
-            t->scale(t->getX(), t->getY(), f, f, 0.0, false);
-        }
     }
 
     return 0;
@@ -3069,7 +3038,6 @@ static int applib_getImages(lua_State* L) {
  */
 static int applib_getFolder(lua_State* L) {
     Plugin* plugin = Plugin::getPluginFromLua(L);
-    Control* control = plugin->getControl();
     auto pluginName = plugin->getName();
 
     // Discard any extra arguments passed in
@@ -3186,7 +3154,6 @@ static const luaL_Reg applib[] = {{"msgbox", applib_msgbox},  // Todo(gtk4) remo
                                   {"setLayerVisibility", applib_setLayerVisibility},
                                   {"setCurrentLayerName", applib_setCurrentLayerName},
                                   {"setBackgroundName", applib_setBackgroundName},
-                                  {"scaleTextElements", applib_scaleTextElements},
                                   {"getDisplayDpi", applib_getDisplayDpi},
                                   {"getZoom", applib_getZoom},
                                   {"setZoom", applib_setZoom},

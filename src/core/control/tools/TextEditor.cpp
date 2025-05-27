@@ -127,6 +127,8 @@ TextEditor::TextEditor(Control* control, const PageRef& page, GtkWidget* xournal
         imContext(gtk_im_multicontext_new(), xoj::util::adopt),
         buffer(gtk_text_buffer_new(nullptr), xoj::util::adopt),
         viewPool(std::make_shared<xoj::util::DispatchPool<xoj::view::TextEditionView>>()) {
+    // Informs the windowing system of the selection -- i.e. for accessibility purposes
+    gtk_text_buffer_add_selection_clipboard(buffer.get(), gtk_clipboard_get(GDK_SELECTION_PRIMARY));
 
     this->initializeEditionAt(x, y);
 
@@ -157,7 +159,7 @@ TextEditor::TextEditor(Control* control, const PageRef& page, GtkWidget* xournal
         // If editing a preexisting text, put the cursor at the right location
         this->mousePressed(x - textElement->getX(), y - textElement->getY());
     } else if (this->cursorBlink) {
-        BlinkTimer::callback(this);
+        blinkCallback(this);
     } else {
         this->cursorVisible = true;
     }
@@ -300,8 +302,7 @@ auto TextEditor::imDeleteSurroundingCallback(GtkIMContext* context, gint offset,
 auto TextEditor::onKeyPressEvent(const KeyEvent& event) -> bool {
 
     // IME needs to handle the input first so the candidate window works correctly
-    auto* e = (GdkEventKey*)(static_cast<GdkEvent*>(event.sourceEvent));
-    if (gtk_im_context_filter_keypress(this->imContext.get(), e)) {
+    if (gtk_im_context_filter_keypress(this->imContext.get(), event.sourceEvent.get())) {
         this->needImReset = true;
 
         GtkTextIter iter = getIteratorAtCursor(this->buffer.get());
@@ -321,8 +322,8 @@ auto TextEditor::onKeyPressEvent(const KeyEvent& event) -> bool {
 auto TextEditor::onKeyReleaseEvent(const KeyEvent& event) -> bool {
     GtkTextIter iter = getIteratorAtCursor(this->buffer.get());
 
-    auto* e = (GdkEventKey*)(static_cast<GdkEvent*>(event.sourceEvent));
-    if (gtk_text_iter_can_insert(&iter, true) && gtk_im_context_filter_keypress(this->imContext.get(), e)) {
+    if (gtk_text_iter_can_insert(&iter, true) &&
+        gtk_im_context_filter_keypress(this->imContext.get(), event.sourceEvent.get())) {
         this->needImReset = true;
         return true;
     }
@@ -633,7 +634,7 @@ void TextEditor::moveCursorIterator(const GtkTextIter* newLocation, gboolean ext
     if (this->cursorBlink) {
         // Whenever the cursor moves, the blinking cycle restarts from the start (i.e. the cursor is first shown).
         this->cursorVisible = false;  // Will be toggled to true by BlinkTimer::callback before the repaint
-        BlinkTimer::callback(this);
+        blinkCallback(this);
     }
 
     if (selectionChanged) {
@@ -835,12 +836,12 @@ void TextEditor::tabulation() {
 
 
 void TextEditor::copyToClipboard() const {
-    GtkClipboard* clipboard = gtk_widget_get_clipboard(this->xournalWidget);
+    auto* clipboard = gtk_widget_get_clipboard(this->xournalWidget);
     gtk_text_buffer_copy_clipboard(this->buffer.get(), clipboard);
 }
 
 void TextEditor::cutToClipboard() {
-    GtkClipboard* clipboard = gtk_widget_get_clipboard(this->xournalWidget);
+    auto* clipboard = gtk_widget_get_clipboard(this->xournalWidget);
     gtk_text_buffer_cut_clipboard(this->buffer.get(), clipboard, true);
 
     this->contentsChanged(true);
@@ -848,7 +849,7 @@ void TextEditor::cutToClipboard() {
 }
 
 void TextEditor::pasteFromClipboard() {
-    GtkClipboard* clipboard = gtk_widget_get_clipboard(this->xournalWidget);
+    auto* clipboard = gtk_widget_get_clipboard(this->xournalWidget);
     gtk_text_buffer_paste_clipboard(this->buffer.get(), clipboard, nullptr, true);
 }
 
@@ -867,17 +868,14 @@ void TextEditor::resetImContext() {
 /*
  * Blink!
  */
-auto TextEditor::BlinkTimer::callback(TextEditor* te) -> bool {
+void TextEditor::blinkCallback(TextEditor* te) {
     te->cursorVisible = !te->cursorVisible;
     auto time = te->cursorVisible ? te->cursorBlinkingTimeOn : te->cursorBlinkingTimeOff;
-    te->blinkTimer = gdk_threads_add_timeout(time, xoj::util::wrap_for_once_v<callback>, te);
+    te->blinkTimer = g_timeout_add(time, xoj::util::wrap_for_once_v<blinkCallback>, te);
 
     Range dirtyRange = te->cursorBox;
     dirtyRange.translate(te->textElement->getX(), te->textElement->getY());
     te->viewPool->dispatch(xoj::view::TextEditionView::FLAG_DIRTY_REGION, dirtyRange);
-
-    // Remove ourselves
-    return false;
 }
 
 void TextEditor::setTextToPangoLayout(PangoLayout* pl) const {

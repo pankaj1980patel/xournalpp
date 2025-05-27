@@ -18,7 +18,7 @@ if (${DOWNLOAD_GTEST})
   include(FetchContent)
   FetchContent_Declare(
       googletest
-      URL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
+      URL https://github.com/google/googletest/archive/refs/tags/v1.16.0.zip
   )
   # Prevent reloading if already downloaed
   set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
@@ -68,7 +68,7 @@ file (GLOB_RECURSE test-gtk-sources
 
 # Define test-gtk-integration target
 add_executable (test-gtk-integration EXCLUDE_FROM_ALL ${test-gtk-sources})
-target_link_libraries (test-gtk-integration xoj::core xoj::util std::filesystem gtest_main)
+target_link_libraries (test-gtk-integration xoj::core xoj::util std::filesystem gtest_main gtest)
 target_include_directories(test-gtk-integration PRIVATE "${PROJECT_BINARY_DIR}/test")
 
 ###############################################################################

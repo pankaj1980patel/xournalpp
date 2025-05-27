@@ -60,6 +60,8 @@ void LayerController::updateActions() {
 
     actionDB->enableAction(Action::LAYER_DELETE, layer > 0);
     actionDB->enableAction(Action::LAYER_MERGE_DOWN, layer > 1);
+    actionDB->enableAction(Action::LAYER_MOVE_UP, layer < maxLayer);
+    actionDB->enableAction(Action::LAYER_MOVE_DOWN, layer > 1);
     actionDB->enableAction(Action::MOVE_SELECTION_LAYER_UP, layer < maxLayer);
     actionDB->enableAction(Action::MOVE_SELECTION_LAYER_DOWN, layer > 1);
     actionDB->enableAction(Action::LAYER_GOTO_NEXT, layer < maxLayer);
@@ -108,7 +110,7 @@ void LayerController::showOrHideAllLayer(bool show) {
     fireLayerVisibilityChanged();
 }
 
-void LayerController::addNewLayer() {
+void LayerController::addNewLayer(bool belowCurrentLayer) {
     control->clearSelectionEndText();
     PageRef p = getCurrentPage();
     if (!p) {
@@ -116,7 +118,8 @@ void LayerController::addNewLayer() {
     }
 
     auto* l = new Layer();
-    auto layerPos = p->getSelectedLayerId();
+    xoj_assert(p->getSelectedLayerId() > 0);
+    auto layerPos = belowCurrentLayer ? p->getSelectedLayerId() - 1 : p->getSelectedLayerId();
     p->insertLayer(l, layerPos);
 
     control->getUndoRedoHandler()->addUndoAction(std::make_unique<InsertLayerUndoAction>(this, p, l, layerPos));
@@ -233,7 +236,7 @@ void LayerController::mergeCurrentLayerDown() {
      * the background is not in the vector, so layer 1 has index 0 and so on.
      */
     const Layer::Index layerBelowIndex = layerBelowID - 1;
-    Layer* layerBelow = (*page->getLayers())[layerBelowIndex];
+    Layer* layerBelow = page->getLayers()[layerBelowIndex];
 
     UndoActionPtr undo_redo_action =
             std::make_unique<MergeLayerDownUndoAction>(this, page, currentLayer, layerID - 1, layerBelow, pageID);

@@ -23,6 +23,7 @@
 #include "util/XojMsgBox.h"
 #include "util/gtk4_helper.h"
 #include "util/i18n.h"  // for FS, _F, _
+#include "util/raii/CStringWrapper.h"
 
 #include "filesystem.h"  // for path, is_regular_file
 
@@ -66,16 +67,16 @@ LatexSettingsPanel::LatexSettingsPanel(GladeSearchpath* gladeSearchPath):
 
 void LatexSettingsPanel::load(const LatexSettings& settings) {
     gtk_check_button_set_active(this->cbAutoDepCheck, settings.autoCheckDependencies);
-    gtk_entry_set_text(GTK_ENTRY(builder.get("latexDefaultEntry")), settings.defaultText.c_str());
+    gtk_editable_set_text(GTK_EDITABLE(builder.get("latexDefaultEntry")), settings.defaultText.c_str());
     if (!settings.globalTemplatePath.empty()) {
-        gtk_file_chooser_set_filename(this->globalTemplateChooser,
-                                      Util::toGFilename(settings.globalTemplatePath).c_str());
+        gtk_file_chooser_set_file(this->globalTemplateChooser, Util::toGFile(settings.globalTemplatePath).get(),
+                                  nullptr);
     }
-    gtk_entry_set_text(GTK_ENTRY(builder.get("latexSettingsGenCmd")), settings.genCmd.c_str());
+    gtk_editable_set_text(GTK_EDITABLE(builder.get("latexSettingsGenCmd")), settings.genCmd.c_str());
 
-    std::string themeId = settings.sourceViewThemeId;
 
 #ifdef USE_GTK_SOURCEVIEW
+    std::string themeId = settings.sourceViewThemeId;
     GtkSourceStyleSchemeManager* themeManager = gtk_source_style_scheme_manager_get_default();
     GtkSourceStyleScheme* theme = gtk_source_style_scheme_manager_get_scheme(themeManager, themeId.c_str());
 
@@ -104,9 +105,11 @@ void LatexSettingsPanel::load(const LatexSettings& settings) {
 
 void LatexSettingsPanel::save(LatexSettings& settings) {
     settings.autoCheckDependencies = gtk_check_button_get_active(this->cbAutoDepCheck);
-    settings.defaultText = gtk_entry_get_text(GTK_ENTRY(builder.get("latexDefaultEntry")));
-    settings.globalTemplatePath = Util::fromGFilename(gtk_file_chooser_get_filename(this->globalTemplateChooser));
-    settings.genCmd = gtk_entry_get_text(GTK_ENTRY(builder.get("latexSettingsGenCmd")));
+    settings.defaultText = gtk_editable_get_text(GTK_EDITABLE(builder.get("latexDefaultEntry")));
+    settings.globalTemplatePath = Util::fromGFile(
+            xoj::util::GObjectSPtr<GFile>(gtk_file_chooser_get_file(this->globalTemplateChooser), xoj::util::adopt)
+                    .get());
+    settings.genCmd = gtk_editable_get_text(GTK_EDITABLE(builder.get("latexSettingsGenCmd")));
 
 #ifdef USE_GTK_SOURCEVIEW
     GtkSourceStyleScheme* theme = gtk_source_style_scheme_chooser_get_style_scheme(
@@ -121,10 +124,8 @@ void LatexSettingsPanel::save(LatexSettings& settings) {
             gtk_check_button_get_active(GTK_CHECK_BUTTON(builder.get("cbSyntaxHighlight")));
 
     GtkFontChooser* fontSelector = GTK_FONT_CHOOSER(builder.get("selBtnEditorFont"));
-    std::string fontDescription{gtk_font_chooser_get_font(fontSelector)};
-    settings.editorFont = fontDescription;
+    settings.editorFont = xoj::util::OwnedCString::assumeOwnership(gtk_font_chooser_get_font(fontSelector)).get();
     settings.useCustomEditorFont = !gtk_check_button_get_active(this->cbUseSystemFont);
-
     settings.editorWordWrap = gtk_check_button_get_active(GTK_CHECK_BUTTON(builder.get("cbWordWrap")));
 }
 

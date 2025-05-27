@@ -54,13 +54,14 @@ void BaseExportJob::showFileChooser(std::function<void()> onFileSelected, std::f
     Settings* settings = control->getSettings();
     Document* doc = control->getDocument();
     doc->lock();
-    fs::path suggestedPath = doc->createSaveFolder(settings->getLastSavePath());
+    fs::path suggestedPath = doc->createSaveFoldername(settings->getLastSavePath());
     suggestedPath /=
             doc->createSaveFilename(Document::PDF, settings->getDefaultSaveName(), settings->getDefaultPdfExportName());
     doc->unlock();
 
     auto pathValidation = [job = this](fs::path& p, const char* filterName) {
-        return job->testAndSetFilepath(p, filterName);
+        job->setExtensionFromFilter(p, filterName);
+        return job->testAndSetFilepath(p);
     };
 
     auto callback = [settings, onFileSelected = std::move(onFileSelected),
@@ -83,9 +84,9 @@ void BaseExportJob::showFileChooser(std::function<void()> onFileSelected, std::f
     popup.show(GTK_WINDOW(this->control->getWindow()->getWindow()));
 }
 
-auto BaseExportJob::testAndSetFilepath(const fs::path& file, const char* /*filterName*/) -> bool {
+auto BaseExportJob::testAndSetFilepath(const fs::path& file) -> bool {
     try {
-        if (!file.empty() && fs::is_directory(file.parent_path())) {
+        if (!file.empty() && fs::is_directory(file.parent_path()) && checkOverwriteBackgroundPDF(file)) {
             this->filepath = file;
             return true;
         }
