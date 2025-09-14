@@ -104,6 +104,13 @@ auto Element::intersectsArea(double x, double y, double width, double height) co
     return (dest_w > 0 && dest_h > 0);
 }
 
+auto Element::distanceTo(double x, double y) const -> double {
+    // Coordinates of the point in the bounding rectangle that is the closest to (x,y).
+    double projX = std::clamp(x, getX(), getX() + getElementWidth());
+    double projY = std::clamp(y, getY(), getY() + getElementHeight());
+    return std::hypot(x - projX, y - projY);
+}
+
 auto Element::isInSelection(ShapeContainer* container) const -> bool {
     if (!container->contains(getX(), getY())) {
         return false;
@@ -121,8 +128,8 @@ auto Element::isInSelection(ShapeContainer* container) const -> bool {
     return true;
 }
 
-auto Element::rescaleOnlyAspectRatio() -> bool { return false; }
-auto Element::rescaleWithMirror() -> bool { return false; }
+auto Element::rescaleOnlyAspectRatio() const -> bool { return false; }
+auto Element::rescaleWithMirror() const -> bool { return false; }
 
 void Element::serialize(ObjectOutputStream& out) const {
     out.writeObject("Element");

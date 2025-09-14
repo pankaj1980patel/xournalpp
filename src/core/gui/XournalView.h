@@ -40,6 +40,7 @@ class RepaintHandler;
 class ScrollHandling;
 class TextEditor;
 class HandRecognition;
+class Layout;
 namespace xoj::util {
 template <class T>
 class Rectangle;
@@ -47,7 +48,7 @@ class Rectangle;
 
 class XournalView: public DocumentListener, public ZoomListener {
 public:
-    XournalView(GtkScrolledWindow* parent, Control* control, ScrollHandling* scrollHandling);
+    XournalView(GtkWidget* parent, Control* control, ScrollHandling* scrollHandling);
     ~XournalView() override;
 
 public:
@@ -109,6 +110,7 @@ public:
     RepaintHandler* getRepaintHandler() const;
     GtkWidget* getWidget() const;
     XournalppCursor* getCursor() const;
+    Layout* getLayout() const;
 
     xoj::util::Rectangle<double>* getVisibleRect(size_t page) const;
     xoj::util::Rectangle<double>* getVisibleRect(const XojPageView* redrawable) const;
@@ -188,11 +190,6 @@ private:
      * Memory cleanup timeout
      */
     guint cleanupTimeout = std::numeric_limits<guint>::max();
-
-    /**
-     * Helper class for Touch specific fixes
-     */
-    std::unique_ptr<HandRecognition> handRecognition;
 
     friend class Layout;
 };
